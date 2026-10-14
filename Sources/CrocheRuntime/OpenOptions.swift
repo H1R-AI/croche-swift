@@ -9,6 +9,8 @@ public enum Attestation: String, Sendable { case platform, off }
 public struct OpenOptions: Sendable {
     public var cloudUrl: String?
     public var projectKey: String
+    /// App configuration. `temperature`: number 0...2, absent uses a tuned default, `.null` = omit.
+    /// Structured calls always omit it. Remote temperature configs require schema 4 / 0.5.3+.
     public var config: JSON
     public var user: String?
     public var handlers: [String: ToolHandler]
