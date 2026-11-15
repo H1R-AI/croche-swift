@@ -1,7 +1,7 @@
 import Foundation
 
 /// A value-semantic JSON tree. Core state and machine stay opaque to the host.
-public enum JSON: Codable, Sendable, Equatable {
+public enum JSON: Codable, Sendable, Hashable {
     case null, bool(Bool), number(Double), string(String), array([JSON]), object([String: JSON])
     public init(from decoder: Decoder) throws {
         let c = try decoder.singleValueContainer()
@@ -37,11 +37,11 @@ public enum JSON: Codable, Sendable, Equatable {
     public var bool: Bool? { if case .bool(let v) = self { return v }; return nil }
 }
 
-public struct CrocheError: Error, Sendable, CustomStringConvertible {
+struct LegacyCrocheError: Error, Sendable, CustomStringConvertible {
     public let code: String
     public let message: String
-    public let receipt: Receipt?
-    public init(_ code: String, _ message: String, receipt: Receipt? = nil) { self.code = code; self.message = message; self.receipt = receipt }
+    public let receipt: LegacyReceipt?
+    public init(_ code: String, _ message: String, receipt: LegacyReceipt? = nil) { self.code = code; self.message = message; self.receipt = receipt }
     public var description: String { "\(code): \(message)" }
 }
 

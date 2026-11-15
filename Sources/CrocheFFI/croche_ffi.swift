@@ -1008,6 +1008,1056 @@ public func FfiConverterTypeCancelToken_lower(_ value: CancelToken) -> UInt64 {
 
 
 
+public protocol CoreAgentProtocol: AnyObject, Sendable {
+    
+    func cancel(inputId: String?) throws 
+    
+    func clearHistory() throws 
+    
+    func decide(inputJson: String, optionsJson: String?, cancel: CancelToken?) throws  -> String
+    
+    func id()  -> String
+    
+    func instance()  -> String?
+    
+    func memoryClear() throws 
+    
+    func memoryDelete(id: String) throws 
+    
+    func memoryEnabled(on: Bool) throws 
+    
+    func memoryList() throws  -> String
+    
+    func request(inputJson: String, images: [CoreImageInput], optionsJson: String?, cancel: CancelToken?) throws  -> String
+    
+    func resetTools() throws 
+    
+    func resetWiki() throws 
+    
+    func send(inputJson: String, images: [CoreImageInput], optionsJson: String?, cancel: CancelToken?) throws  -> String
+    
+    func setTools(scopeJson: String) throws 
+    
+    func setWiki(scopeJson: String) throws 
+    
+    func shutdown() throws 
+    
+    func subscribe(selectionJson: String, eventSink: CoreEventSink) throws  -> CoreSubscription
+    
+}
+open class CoreAgent: CoreAgentProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_coreagent(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_coreagent(handle, $0) }
+    }
+
+    
+
+    
+open func cancel(inputId: String?)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_cancel(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(inputId),uniffiCallStatus
+    )
+}
+}
+    
+open func clearHistory()throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_clear_history(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func decide(inputJson: String, optionsJson: String?, cancel: CancelToken?)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_decide(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(inputJson),
+        FfiConverterOptionString.lower(optionsJson),
+        FfiConverterOptionTypeCancelToken.lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func id() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_id(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func instance() -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_instance(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func memoryClear()throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_memory_clear(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func memoryDelete(id: String)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_memory_delete(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(id),uniffiCallStatus
+    )
+}
+}
+    
+open func memoryEnabled(on: Bool)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_memory_enabled(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(on),uniffiCallStatus
+    )
+}
+}
+    
+open func memoryList()throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_memory_list(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func request(inputJson: String, images: [CoreImageInput], optionsJson: String?, cancel: CancelToken?)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_request(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(inputJson),
+        FfiConverterSequenceTypeCoreImageInput.lower(images),
+        FfiConverterOptionString.lower(optionsJson),
+        FfiConverterOptionTypeCancelToken.lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func resetTools()throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_reset_tools(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func resetWiki()throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_reset_wiki(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func send(inputJson: String, images: [CoreImageInput], optionsJson: String?, cancel: CancelToken?)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_send(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(inputJson),
+        FfiConverterSequenceTypeCoreImageInput.lower(images),
+        FfiConverterOptionString.lower(optionsJson),
+        FfiConverterOptionTypeCancelToken.lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func setTools(scopeJson: String)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_set_tools(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(scopeJson),uniffiCallStatus
+    )
+}
+}
+    
+open func setWiki(scopeJson: String)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_set_wiki(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(scopeJson),uniffiCallStatus
+    )
+}
+}
+    
+open func shutdown()throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_shutdown(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func subscribe(selectionJson: String, eventSink: CoreEventSink)throws  -> CoreSubscription  {
+    return try  FfiConverterTypeCoreSubscription_lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreagent_subscribe(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(selectionJson),
+        FfiConverterTypeCoreEventSink_lower(eventSink),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreAgent: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreAgent
+
+    public static func lift(_ handle: UInt64) throws -> CoreAgent {
+        return CoreAgent(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoreAgent) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreAgent {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreAgent, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreAgent_lift(_ handle: UInt64) throws -> CoreAgent {
+    return try FfiConverterTypeCoreAgent.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreAgent_lower(_ value: CoreAgent) -> UInt64 {
+    return FfiConverterTypeCoreAgent.lower(value)
+}
+
+
+
+
+
+
+/**
+ * One OS callback; never retains a Croche, a sink or the original backend.
+ */
+public protocol CoreBackgroundWakeProtocol: AnyObject, Sendable {
+    
+    func run(deadlineMs: Int64?, cancel: CancelToken) throws 
+    
+}
+/**
+ * One OS callback; never retains a Croche, a sink or the original backend.
+ */
+open class CoreBackgroundWake: CoreBackgroundWakeProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_corebackgroundwake(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_corebackgroundwake(handle, $0) }
+    }
+
+    
+
+    
+open func run(deadlineMs: Int64?, cancel: CancelToken)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corebackgroundwake_run(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionInt64.lower(deadlineMs),
+        FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreBackgroundWake: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreBackgroundWake
+
+    public static func lift(_ handle: UInt64) throws -> CoreBackgroundWake {
+        return CoreBackgroundWake(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoreBackgroundWake) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreBackgroundWake {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreBackgroundWake, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreBackgroundWake_lift(_ handle: UInt64) throws -> CoreBackgroundWake {
+    return try FfiConverterTypeCoreBackgroundWake.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreBackgroundWake_lower(_ value: CoreBackgroundWake) -> UInt64 {
+    return FfiConverterTypeCoreBackgroundWake.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Release ABI excludes the O15 hook.
+ * ```compile_fail
+ * use croche_ffi::CoreCroche;
+ * let _ = CoreCroche::open_for_tests;
+ * ```
+ */
+public protocol CoreCrocheProtocol: AnyObject, Sendable {
+    
+    func agent(id: String, scopeJson: String?) throws  -> CoreAgent
+    
+    func agentIds() throws  -> [String]
+    
+    func debugAttach(optionsJson: String) throws  -> String
+    
+    func debugDetach() throws 
+    
+    func deleteData(scopeJson: String?) throws 
+    
+    func deliverDue(optionsJson: String?, cancel: CancelToken?) throws  -> String
+    
+    func shutdown() throws 
+    
+    func wikiList() throws  -> String
+    
+    func wikiPut(docJson: String) throws 
+    
+    func wikiRemove(path: String) throws 
+    
+    func runTool(name: String, argsJson: String, optionsJson: String, cancel: CancelToken?) throws  -> String
+    
+}
+/**
+ * Release ABI excludes the O15 hook.
+ * ```compile_fail
+ * use croche_ffi::CoreCroche;
+ * let _ = CoreCroche::open_for_tests;
+ * ```
+ */
+open class CoreCroche: CoreCrocheProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_corecroche(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_corecroche(handle, $0) }
+    }
+
+    
+public static func `open`(openJson: String, registrations: [CoreToolRegistration], storage: CoreStoragePal?, host: HostPal, bindingFactsJson: String, recoveryJson: String?)throws  -> CoreCroche  {
+    return try  FfiConverterTypeCoreCroche_lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_constructor_corecroche_open(
+        FfiConverterString.lower(openJson),
+        FfiConverterSequenceTypeCoreToolRegistration.lower(registrations),
+        FfiConverterOptionTypeCoreStoragePal.lower(storage),
+        FfiConverterTypeHostPal_lower(host),
+        FfiConverterString.lower(bindingFactsJson),
+        FfiConverterOptionString.lower(recoveryJson),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+open func agent(id: String, scopeJson: String?)throws  -> CoreAgent  {
+    return try  FfiConverterTypeCoreAgent_lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_agent(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(id),
+        FfiConverterOptionString.lower(scopeJson),uniffiCallStatus
+    )
+})
+}
+    
+open func agentIds()throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_agent_ids(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func debugAttach(optionsJson: String)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_debug_attach(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(optionsJson),uniffiCallStatus
+    )
+})
+}
+    
+open func debugDetach()throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_debug_detach(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func deleteData(scopeJson: String?)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_delete_data(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(scopeJson),uniffiCallStatus
+    )
+}
+}
+    
+open func deliverDue(optionsJson: String?, cancel: CancelToken?)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_deliver_due(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(optionsJson),
+        FfiConverterOptionTypeCancelToken.lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func shutdown()throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_shutdown(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func wikiList()throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_wiki_list(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func wikiPut(docJson: String)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_wiki_put(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(docJson),uniffiCallStatus
+    )
+}
+}
+    
+open func wikiRemove(path: String)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_wiki_remove(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(path),uniffiCallStatus
+    )
+}
+}
+    
+open func runTool(name: String, argsJson: String, optionsJson: String, cancel: CancelToken?)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corecroche_run_tool(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(name),
+        FfiConverterString.lower(argsJson),
+        FfiConverterString.lower(optionsJson),
+        FfiConverterOptionTypeCancelToken.lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreCroche: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreCroche
+
+    public static func lift(_ handle: UInt64) throws -> CoreCroche {
+        return CoreCroche(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoreCroche) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreCroche {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreCroche, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreCroche_lift(_ handle: UInt64) throws -> CoreCroche {
+    return try FfiConverterTypeCoreCroche.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreCroche_lower(_ value: CoreCroche) -> UInt64 {
+    return FfiConverterTypeCoreCroche.lower(value)
+}
+
+
+
+
+
+
+/**
+ * A transport handle, not a second queue. Its closures belong to S3's subscription.
+ */
+public protocol CoreDeliveryProtocol: AnyObject, Sendable {
+    
+    /**
+     * {outcome: returned|threw|unavailable, error?: JSON}. Native `returned` is
+     * the handler's return; JS/RN adapters report after thenable settlement.
+     * S3 ignores terminal/duplicate/stale delivery completions.
+     */
+    func complete(outcomeJson: String) 
+    
+    /**
+     * Called on the invocation stack, never asynchronously before a later invocation.
+     */
+    func tryEnter()  -> Bool
+    
+}
+/**
+ * A transport handle, not a second queue. Its closures belong to S3's subscription.
+ */
+open class CoreDelivery: CoreDeliveryProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_coredelivery(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_coredelivery(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * {outcome: returned|threw|unavailable, error?: JSON}. Native `returned` is
+     * the handler's return; JS/RN adapters report after thenable settlement.
+     * S3 ignores terminal/duplicate/stale delivery completions.
+     */
+open func complete(outcomeJson: String)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coredelivery_complete(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(outcomeJson),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Called on the invocation stack, never asynchronously before a later invocation.
+     */
+open func tryEnter() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coredelivery_try_enter(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreDelivery: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreDelivery
+
+    public static func lift(_ handle: UInt64) throws -> CoreDelivery {
+        return CoreDelivery(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoreDelivery) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreDelivery {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreDelivery, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreDelivery_lift(_ handle: UInt64) throws -> CoreDelivery {
+    return try FfiConverterTypeCoreDelivery.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreDelivery_lower(_ value: CoreDelivery) -> UInt64 {
+    return FfiConverterTypeCoreDelivery.lower(value)
+}
+
+
+
+
+
+
+/**
+ * The host posts this owned delivery to its app thread, checks `try_enter`
+ * synchronously immediately before invocation, then reports completion.
+ */
+public protocol CoreEventSink: AnyObject, Sendable {
+    
+    func deliver(deliveryId: String, eventJson: String, delivery: CoreDelivery) throws 
+    
+}
+/**
+ * The host posts this owned delivery to its app thread, checks `try_enter`
+ * synchronously immediately before invocation, then reports completion.
+ */
+open class CoreEventSinkImpl: CoreEventSink, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_coreeventsink(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_coreeventsink(handle, $0) }
+    }
+
+    
+
+    
+open func deliver(deliveryId: String, eventJson: String, delivery: CoreDelivery)throws   {try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreeventsink_deliver(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(deliveryId),
+        FfiConverterString.lower(eventJson),
+        FfiConverterTypeCoreDelivery_lower(delivery),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceCoreEventSink {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceCoreEventSink = UniffiVTableCallbackInterfaceCoreEventSink(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeCoreEventSink.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface CoreEventSink: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeCoreEventSink.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface CoreEventSink: handle missing in uniffiClone")
+            }
+        },
+        deliver: { (
+            uniffiHandle: UInt64,
+            deliveryId: RustBuffer,
+            eventJson: RustBuffer,
+            delivery: UInt64,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeCoreEventSink.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.deliver(
+                     deliveryId: try FfiConverterString.lift(deliveryId),
+                     eventJson: try FfiConverterString.lift(eventJson),
+                     delivery: try FfiConverterTypeCoreDelivery_lift(delivery)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceCoreEventSink> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceCoreEventSink>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitCoreEventSink() {
+    uniffi_croche_ffi_fn_init_callback_vtable_coreeventsink(UniffiCallbackInterfaceCoreEventSink.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreEventSink: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<CoreEventSink>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreEventSink
+
+    public static func lift(_ handle: UInt64) throws -> CoreEventSink {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return CoreEventSinkImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: CoreEventSink) -> UInt64 {
+         if let rustImpl = value as? CoreEventSinkImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreEventSink {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreEventSink, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreEventSink_lift(_ handle: UInt64) throws -> CoreEventSink {
+    return try FfiConverterTypeCoreEventSink.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreEventSink_lower(_ value: CoreEventSink) -> UInt64 {
+    return FfiConverterTypeCoreEventSink.lower(value)
+}
+
+
+
+
+
+
 /**
  * `Croche`: the project, open. Its agents are `CoreRuntime`s. Every method blocks the calling
  * thread: call from a background thread.
@@ -1015,15 +2065,14 @@ public func FfiConverterTypeCancelToken_lower(_ value: CancelToken) -> UInt64 {
 public protocol CoreProjectProtocol: AnyObject, Sendable {
     
     /**
-     * That agent's Runtime (`id` None: `"default"`); `config` is the code override as JSON.
-     * `on_event` receives every send's events through the returned object.
+     * Open a declared agent; instance patches use agent_with_options.
      */
-    func agent(id: String?, config: String?, onEvent: EventListener?) throws  -> CoreRuntime
+    func agent(id: String?, onEvent: EventListener?) throws  -> CoreRuntime
     
     func agentIds()  -> [String]
     
     /**
-     * `agent(id, {instance?, fresh?, config?})` (#406): `options` is that JSON. Core validates
+     * `agent(id, {instance?, config?, handlers?})` (#406): `options` is that JSON. Core validates
      * admission, as the web binding's `agentWithOptions` does.
      */
     func agentWithOptions(id: String?, options: String, onEvent: EventListener?) throws  -> CoreRuntime
@@ -1043,7 +2092,11 @@ public protocol CoreProjectProtocol: AnyObject, Sendable {
      */
     func crocheUserId()  -> String?
     
+    func deleteData(options: String) throws 
+    
     func installationId()  -> String?
+    
+    func listInstances(agentId: String) throws  -> String
     
     func user()  -> String?
     
@@ -1124,16 +2177,14 @@ public static func `open`(pals: HostPalFactory, options: ProjectOpenOptions, onU
 
     
     /**
-     * That agent's Runtime (`id` None: `"default"`); `config` is the code override as JSON.
-     * `on_event` receives every send's events through the returned object.
+     * Open a declared agent; instance patches use agent_with_options.
      */
-open func agent(id: String? = nil, config: String? = nil, onEvent: EventListener? = nil)throws  -> CoreRuntime  {
+open func agent(id: String? = nil, onEvent: EventListener? = nil)throws  -> CoreRuntime  {
     return try  FfiConverterTypeCoreRuntime_lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_coreproject_agent(
             self.uniffiCloneHandle(),
         FfiConverterOptionString.lower(id),
-        FfiConverterOptionString.lower(config),
         FfiConverterOptionTypeEventListener.lower(onEvent),uniffiCallStatus
     )
 })
@@ -1149,7 +2200,7 @@ open func agentIds() -> [String]  {
 }
     
     /**
-     * `agent(id, {instance?, fresh?, config?})` (#406): `options` is that JSON. Core validates
+     * `agent(id, {instance?, config?, handlers?})` (#406): `options` is that JSON. Core validates
      * admission, as the web binding's `agentWithOptions` does.
      */
 open func agentWithOptions(id: String? = nil, options: String, onEvent: EventListener? = nil)throws  -> CoreRuntime  {
@@ -1199,11 +2250,30 @@ open func crocheUserId() -> String?  {
 })
 }
     
+open func deleteData(options: String)throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreproject_delete_data(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(options),uniffiCallStatus
+    )
+}
+}
+    
 open func installationId() -> String?  {
     return try!  FfiConverterOptionString.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_coreproject_installation_id(
             self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func listInstances(agentId: String)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreproject_list_instances(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(agentId),uniffiCallStatus
     )
 })
 }
@@ -1271,8 +2341,6 @@ public func FfiConverterTypeCoreProject_lower(_ value: CoreProject) -> UInt64 {
  * One Croche Runtime. Every method blocks the calling thread: call from a background thread.
  */
 public protocol CoreRuntimeProtocol: AnyObject, Sendable {
-    
-    func adjustBudget(amount: Double, absolute: Bool, id: String?) throws  -> String
     
     func agentId()  -> String
     
@@ -1358,6 +2426,8 @@ public protocol CoreRuntimeProtocol: AnyObject, Sendable {
      */
     func deliverDue(cancel: CancelToken?) throws  -> String
     
+    func effectiveConfig() throws  -> String
+    
     func flush() throws 
     
     /**
@@ -1378,6 +2448,8 @@ public protocol CoreRuntimeProtocol: AnyObject, Sendable {
      * The instance key (#406); None for the main agent.
      */
     func instance()  -> String?
+    
+    func isClosed()  -> Bool
     
     /**
      * The message log's identity: a cursor `{logId, seq}` from another log is not resumed.
@@ -1443,6 +2515,11 @@ public protocol CoreRuntimeProtocol: AnyObject, Sendable {
      * `schedule.degraded` and returned.
      */
     func reschedule() throws 
+    
+    /**
+     * Private binding handshake: reserve on the caller's thread before native capture.
+     */
+    func reserveSend() throws  -> CoreSendEntry
     
     /**
      * The agent's pending scheduled notes: `{pending: [{id, at, note}], due}`.
@@ -1653,18 +2730,6 @@ public static func `open`(pal: HostPal, config: String, options: RuntimeOpenOpti
     
 
     
-open func adjustBudget(amount: Double, absolute: Bool, id: String?)throws  -> String  {
-    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
-        uniffiCallStatus in
-    uniffi_croche_ffi_fn_method_coreruntime_adjust_budget(
-            self.uniffiCloneHandle(),
-        FfiConverterDouble.lower(amount),
-        FfiConverterBool.lower(absolute),
-        FfiConverterOptionString.lower(id),uniffiCallStatus
-    )
-})
-}
-    
 open func agentId() -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
@@ -1844,6 +2909,15 @@ open func deliverDue(cancel: CancelToken? = nil)throws  -> String  {
 })
 }
     
+open func effectiveConfig()throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreruntime_effective_config(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
 open func flush()throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_coreruntime_flush(
@@ -1889,6 +2963,15 @@ open func instance() -> String?  {
     return try!  FfiConverterOptionString.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_coreruntime_instance(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func isClosed() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreruntime_is_closed(
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
@@ -2047,6 +3130,18 @@ open func reschedule()throws   {try rustCallWithError(FfiConverterTypeFfiError_l
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 }
+}
+    
+    /**
+     * Private binding handshake: reserve on the caller's thread before native capture.
+     */
+open func reserveSend()throws  -> CoreSendEntry  {
+    return try  FfiConverterTypeCoreSendEntry_lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coreruntime_reserve_send(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
 }
     
     /**
@@ -2430,6 +3525,1109 @@ public func FfiConverterTypeCoreRuntime_lower(_ value: CoreRuntime) -> UInt64 {
 
 
 /**
+ * Private native reservation: snapshot on the caller executor, submit, offload only wait.
+ */
+public protocol CoreSendEntryProtocol: AnyObject, Sendable {
+    
+    func submit(input: String, captures: [PalCapturedImageSource], cancel: CancelToken?, responseFormat: String?) throws  -> PendingSend
+    
+}
+/**
+ * Private native reservation: snapshot on the caller executor, submit, offload only wait.
+ */
+open class CoreSendEntry: CoreSendEntryProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_coresendentry(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_coresendentry(handle, $0) }
+    }
+
+    
+
+    
+open func submit(input: String, captures: [PalCapturedImageSource], cancel: CancelToken? = nil, responseFormat: String? = nil)throws  -> PendingSend  {
+    return try  FfiConverterTypePendingSend_lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coresendentry_submit(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(input),
+        FfiConverterSequenceTypePalCapturedImageSource.lower(captures),
+        FfiConverterOptionTypeCancelToken.lower(cancel),
+        FfiConverterOptionString.lower(responseFormat),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreSendEntry: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreSendEntry
+
+    public static func lift(_ handle: UInt64) throws -> CoreSendEntry {
+        return CoreSendEntry(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoreSendEntry) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreSendEntry {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreSendEntry, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreSendEntry_lift(_ handle: UInt64) throws -> CoreSendEntry {
+    return try FfiConverterTypeCoreSendEntry.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreSendEntry_lower(_ value: CoreSendEntry) -> UInt64 {
+    return FfiConverterTypeCoreSendEntry.lower(value)
+}
+
+
+
+
+
+
+public protocol CoreStoragePal: AnyObject, Sendable {
+    
+    func read(key: String) throws  -> String?
+    
+    func write(key: String, value: String) throws 
+    
+    func remove(key: String) throws 
+    
+    func list(prefix: String) throws  -> [String]
+    
+    func lock(name: String) throws  -> PalLockOutcome
+    
+    func unlock(name: String) throws 
+    
+    func readSecret(key: String) throws  -> String?
+    
+    func writeSecret(key: String, value: String) throws 
+    
+    func removeSecret(key: String) throws 
+    
+}
+open class CoreStoragePalImpl: CoreStoragePal, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_corestoragepal(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_corestoragepal(handle, $0) }
+    }
+
+    
+
+    
+open func read(key: String)throws  -> String?  {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_read(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),uniffiCallStatus
+    )
+})
+}
+    
+open func write(key: String, value: String)throws   {try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_write(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),
+        FfiConverterString.lower(value),uniffiCallStatus
+    )
+}
+}
+    
+open func remove(key: String)throws   {try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_remove(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),uniffiCallStatus
+    )
+}
+}
+    
+open func list(prefix: String)throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_list(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(prefix),uniffiCallStatus
+    )
+})
+}
+    
+open func lock(name: String)throws  -> PalLockOutcome  {
+    return try  FfiConverterTypePalLockOutcome_lift(try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_lock(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(name),uniffiCallStatus
+    )
+})
+}
+    
+open func unlock(name: String)throws   {try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_unlock(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(name),uniffiCallStatus
+    )
+}
+}
+    
+open func readSecret(key: String)throws  -> String?  {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_read_secret(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),uniffiCallStatus
+    )
+})
+}
+    
+open func writeSecret(key: String, value: String)throws   {try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_write_secret(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),
+        FfiConverterString.lower(value),uniffiCallStatus
+    )
+}
+}
+    
+open func removeSecret(key: String)throws   {try rustCallWithError(FfiConverterTypeCoreStorageFailure_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_corestoragepal_remove_secret(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(key),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceCoreStoragePal {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceCoreStoragePal = UniffiVTableCallbackInterfaceCoreStoragePal(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeCoreStoragePal.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface CoreStoragePal: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeCoreStoragePal.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface CoreStoragePal: handle missing in uniffiClone")
+            }
+        },
+        read: { (
+            uniffiHandle: UInt64,
+            key: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> String? in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.read(
+                     key: try FfiConverterString.lift(key)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterOptionString.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        write: { (
+            uniffiHandle: UInt64,
+            key: RustBuffer,
+            value: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.write(
+                     key: try FfiConverterString.lift(key),
+                     value: try FfiConverterString.lift(value)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        remove: { (
+            uniffiHandle: UInt64,
+            key: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.remove(
+                     key: try FfiConverterString.lift(key)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        list: { (
+            uniffiHandle: UInt64,
+            prefix: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> [String] in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.list(
+                     prefix: try FfiConverterString.lift(prefix)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterSequenceString.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        lock: { (
+            uniffiHandle: UInt64,
+            name: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> PalLockOutcome in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.lock(
+                     name: try FfiConverterString.lift(name)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterTypePalLockOutcome_lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        unlock: { (
+            uniffiHandle: UInt64,
+            name: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.unlock(
+                     name: try FfiConverterString.lift(name)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        readSecret: { (
+            uniffiHandle: UInt64,
+            key: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> String? in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.readSecret(
+                     key: try FfiConverterString.lift(key)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterOptionString.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        writeSecret: { (
+            uniffiHandle: UInt64,
+            key: RustBuffer,
+            value: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.writeSecret(
+                     key: try FfiConverterString.lift(key),
+                     value: try FfiConverterString.lift(value)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        },
+        removeSecret: { (
+            uniffiHandle: UInt64,
+            key: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeCoreStoragePal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.removeSecret(
+                     key: try FfiConverterString.lift(key)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCoreStorageFailure_lower
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceCoreStoragePal> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceCoreStoragePal>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitCoreStoragePal() {
+    uniffi_croche_ffi_fn_init_callback_vtable_corestoragepal(UniffiCallbackInterfaceCoreStoragePal.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreStoragePal: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<CoreStoragePal>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreStoragePal
+
+    public static func lift(_ handle: UInt64) throws -> CoreStoragePal {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return CoreStoragePalImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: CoreStoragePal) -> UInt64 {
+         if let rustImpl = value as? CoreStoragePalImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreStoragePal {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreStoragePal, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreStoragePal_lift(_ handle: UInt64) throws -> CoreStoragePal {
+    return try FfiConverterTypeCoreStoragePal.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreStoragePal_lower(_ value: CoreStoragePal) -> UInt64 {
+    return FfiConverterTypeCoreStoragePal.lower(value)
+}
+
+
+
+
+
+
+public protocol CoreSubscriptionProtocol: AnyObject, Sendable {
+    
+    func ended()  -> Bool
+    
+    func history(optionsJson: String) throws 
+    
+    func shutdown() 
+    
+}
+open class CoreSubscription: CoreSubscriptionProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_coresubscription(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_coresubscription(handle, $0) }
+    }
+
+    
+
+    
+open func ended() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coresubscription_ended(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func history(optionsJson: String)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coresubscription_history(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(optionsJson),uniffiCallStatus
+    )
+}
+}
+    
+open func shutdown()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coresubscription_shutdown(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreSubscription: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreSubscription
+
+    public static func lift(_ handle: UInt64) throws -> CoreSubscription {
+        return CoreSubscription(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoreSubscription) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreSubscription {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreSubscription, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreSubscription_lift(_ handle: UInt64) throws -> CoreSubscription {
+    return try FfiConverterTypeCoreSubscription.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreSubscription_lower(_ value: CoreSubscription) -> UInt64 {
+    return FfiConverterTypeCoreSubscription.lower(value)
+}
+
+
+
+
+
+
+public protocol CoreToolDefinitionProtocol: AnyObject, Sendable {
+    
+    func name()  -> String
+    
+}
+open class CoreToolDefinition: CoreToolDefinitionProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_coretooldefinition(self.handle, $0) }
+    }
+public convenience init(manifestJson: String, execute: CoreToolExecute)throws  {
+    let handle =
+        try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_constructor_coretooldefinition_new(
+        FfiConverterString.lower(manifestJson),
+        FfiConverterTypeCoreToolExecute_lower(execute),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_coretooldefinition(handle, $0) }
+    }
+
+    
+
+    
+open func name() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coretooldefinition_name(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreToolDefinition: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreToolDefinition
+
+    public static func lift(_ handle: UInt64) throws -> CoreToolDefinition {
+        return CoreToolDefinition(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoreToolDefinition) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreToolDefinition {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreToolDefinition, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreToolDefinition_lift(_ handle: UInt64) throws -> CoreToolDefinition {
+    return try FfiConverterTypeCoreToolDefinition.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreToolDefinition_lower(_ value: CoreToolDefinition) -> UInt64 {
+    return FfiConverterTypeCoreToolDefinition.lower(value)
+}
+
+
+
+
+
+
+/**
+ * JSON text follows croche_core::tools::ToolCompletion (including invalid_result).
+ * Handler throws and pre-dispatch refusals are distinct; Core chooses policy.
+ */
+public protocol CoreToolExecute: AnyObject, Sendable {
+    
+    func execute(callJson: String, contextJson: String, cancel: CancelToken) throws  -> String
+    
+}
+/**
+ * JSON text follows croche_core::tools::ToolCompletion (including invalid_result).
+ * Handler throws and pre-dispatch refusals are distinct; Core chooses policy.
+ */
+open class CoreToolExecuteImpl: CoreToolExecute, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_croche_ffi_fn_clone_coretoolexecute(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_croche_ffi_fn_free_coretoolexecute(handle, $0) }
+    }
+
+    
+
+    
+open func execute(callJson: String, contextJson: String, cancel: CancelToken)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_coretoolexecute_execute(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(callJson),
+        FfiConverterString.lower(contextJson),
+        FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceCoreToolExecute {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceCoreToolExecute = UniffiVTableCallbackInterfaceCoreToolExecute(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeCoreToolExecute.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface CoreToolExecute: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeCoreToolExecute.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface CoreToolExecute: handle missing in uniffiClone")
+            }
+        },
+        execute: { (
+            uniffiHandle: UInt64,
+            callJson: RustBuffer,
+            contextJson: RustBuffer,
+            cancel: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> String in
+                guard let uniffiObj = try? FfiConverterTypeCoreToolExecute.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.execute(
+                     callJson: try FfiConverterString.lift(callJson),
+                     contextJson: try FfiConverterString.lift(contextJson),
+                     cancel: try FfiConverterTypeCancelToken_lift(cancel)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterString.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceCoreToolExecute> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceCoreToolExecute>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitCoreToolExecute() {
+    uniffi_croche_ffi_fn_init_callback_vtable_coretoolexecute(UniffiCallbackInterfaceCoreToolExecute.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreToolExecute: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<CoreToolExecute>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = CoreToolExecute
+
+    public static func lift(_ handle: UInt64) throws -> CoreToolExecute {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return CoreToolExecuteImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: CoreToolExecute) -> UInt64 {
+         if let rustImpl = value as? CoreToolExecuteImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreToolExecute {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoreToolExecute, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreToolExecute_lift(_ handle: UInt64) throws -> CoreToolExecute {
+    return try FfiConverterTypeCoreToolExecute.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreToolExecute_lower(_ value: CoreToolExecute) -> UInt64 {
+    return FfiConverterTypeCoreToolExecute.lower(value)
+}
+
+
+
+
+
+
+/**
  * Receives events as JSON: a send's progress, usage, or debug entries.
  */
 public protocol EventListener: AnyObject, Sendable {
@@ -2633,20 +4831,46 @@ public func FfiConverterTypeEventListener_lower(_ value: EventListener) -> UInt6
 
 
 
-/**
- * The platform abstraction: the only part a native host implements. Every method blocks
- * its thread until done. `http`, `tool` and `attest` are called on a worker thread; they
- * should honour cancellation (and `http`/`attest` their `timeout_ms`) to free it, but the
- * Runtime does not depend on it: past the deadline the effect has its result and anything
- * late is dropped. `tool` has no deadline of its own: the Runtime is its only clock.
- */
 public protocol HostPal: AnyObject, Sendable {
+    
+    func streamPlatform()  -> HostStreamPlatform
+    
+    /**
+     * Total synchronous capability read. Must not acquire images or perform I/O.
+     */
+    func imageCodecAvailable()  -> Bool
+    
+    func readImage(request: PalImageReadRequest, cancel: CancelToken) throws  -> Data
+    
+    func prepareImage(source: PalImageBytes, plan: PalImagePreparePlan, cancel: CancelToken) throws  -> PalImageBytes
+    
+    func releaseImage(capture: String) 
+    
+    /**
+     * Decode bytes only; no MIME selects a decoder. Frame/orientation are Core decisions.
+     */
+    func decodeImage(bytes: Data, options: PalImageDecodeOptions, cancel: CancelToken) throws  -> PalDecodedImage
+    
+    func renderImage(request: PalImageRenderRequest, cancel: CancelToken) throws  -> Data
+    
+    /**
+     * Synchronous, idempotent; private decoded pixels never cross the bridge.
+     */
+    func releaseDecodedImage(handle: String) 
     
     /**
      * Send the request; call `sink.head` once, then `sink.chunk` per piece of body; return
      * when the body ends. Stop when `chunk` returns false or `cancel` fires.
      */
     func http(request: PalHttpRequest, sink: HttpSink, cancel: CancelToken) throws 
+    
+    func resolve(host: String, cancel: CancelToken) throws  -> [String]
+    
+    func platformFacts()  -> PalPlatformFacts
+    
+    func readAsset(path: String) throws  -> Data?
+    
+    func list(prefix: String) throws  -> [String]
     
     func read(key: String) throws  -> String?
     
@@ -2670,11 +4894,11 @@ public protocol HostPal: AnyObject, Sendable {
     func removeSecret(key: String) throws 
     
     /**
-     * Exclusive ownership of the store (`store_busy` when taken).
+     * Returns Held when another owner holds this named lock; errors are failures only.
      */
-    func lock(key: String) throws 
+    func lock(key: String) throws  -> PalLockOutcome
     
-    func unlock(key: String) 
+    func unlock(key: String) throws 
     
     /**
      * Identifies the store: two Runtimes on one store in a process are refused.
@@ -2714,6 +4938,11 @@ public protocol HostPal: AnyObject, Sendable {
     func schedule(entries: String) throws 
     
     /**
+     * OS install only. Core owns the fixed identifier and weak wake object.
+     */
+    func registerBackground(identifier: String, wake: CoreBackgroundWake) throws 
+    
+    /**
      * The turn archive's line storage (F20.6), the host's `ArchiveRuntimeStorage`: entries
      * `archive<NNNN>` beside the store. A host whose storage keeps no archive fails each call
      * with `archive_unavailable`; the Runtime then keeps no archive and nothing else changes.
@@ -2751,13 +4980,6 @@ public protocol HostPal: AnyObject, Sendable {
     func storageCapability()  -> StorageCapability
     
 }
-/**
- * The platform abstraction: the only part a native host implements. Every method blocks
- * its thread until done. `http`, `tool` and `attest` are called on a worker thread; they
- * should honour cancellation (and `http`/`attest` their `timeout_ms`) to free it, but the
- * Runtime does not depend on it: past the deadline the effect has its result and anything
- * late is dropped. `tool` has no deadline of its own: the Runtime is its only clock.
- */
 open class HostPalImpl: HostPal, @unchecked Sendable {
     fileprivate let handle: UInt64
 
@@ -2811,11 +5033,102 @@ open class HostPalImpl: HostPal, @unchecked Sendable {
     
 
     
+open func streamPlatform() -> HostStreamPlatform  {
+    return try!  FfiConverterTypeHostStreamPlatform_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_stream_platform(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Total synchronous capability read. Must not acquire images or perform I/O.
+     */
+open func imageCodecAvailable() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_image_codec_available(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func readImage(request: PalImageReadRequest, cancel: CancelToken)throws  -> Data  {
+    return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_read_image(
+            self.uniffiCloneHandle(),
+        FfiConverterTypePalImageReadRequest_lower(request),
+        FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func prepareImage(source: PalImageBytes, plan: PalImagePreparePlan, cancel: CancelToken)throws  -> PalImageBytes  {
+    return try  FfiConverterTypePalImageBytes_lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_prepare_image(
+            self.uniffiCloneHandle(),
+        FfiConverterTypePalImageBytes_lower(source),
+        FfiConverterTypePalImagePreparePlan_lower(plan),
+        FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func releaseImage(capture: String)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_release_image(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(capture),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Decode bytes only; no MIME selects a decoder. Frame/orientation are Core decisions.
+     */
+open func decodeImage(bytes: Data, options: PalImageDecodeOptions, cancel: CancelToken)throws  -> PalDecodedImage  {
+    return try  FfiConverterTypePalDecodedImage_lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_decode_image(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(bytes),
+        FfiConverterTypePalImageDecodeOptions_lower(options),
+        FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func renderImage(request: PalImageRenderRequest, cancel: CancelToken)throws  -> Data  {
+    return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_render_image(
+            self.uniffiCloneHandle(),
+        FfiConverterTypePalImageRenderRequest_lower(request),
+        FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Synchronous, idempotent; private decoded pixels never cross the bridge.
+     */
+open func releaseDecodedImage(handle: String)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_release_decoded_image(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(handle),uniffiCallStatus
+    )
+}
+}
+    
     /**
      * Send the request; call `sink.head` once, then `sink.chunk` per piece of body; return
      * when the body ends. Stop when `chunk` returns false or `cancel` fires.
      */
-open func http(request: PalHttpRequest, sink: HttpSink, cancel: CancelToken)throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
+open func http(request: PalHttpRequest, sink: HttpSink, cancel: CancelToken)throws   {try rustCallWithError(FfiConverterTypeCorePalError_lift) {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_hostpal_http(
             self.uniffiCloneHandle(),
@@ -2824,6 +5137,46 @@ open func http(request: PalHttpRequest, sink: HttpSink, cancel: CancelToken)thro
         FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
     )
 }
+}
+    
+open func resolve(host: String, cancel: CancelToken)throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_resolve(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(host),
+        FfiConverterTypeCancelToken_lower(cancel),uniffiCallStatus
+    )
+})
+}
+    
+open func platformFacts() -> PalPlatformFacts  {
+    return try!  FfiConverterTypePalPlatformFacts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_platform_facts(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func readAsset(path: String)throws  -> Data?  {
+    return try  FfiConverterOptionData.lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_read_asset(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(path),uniffiCallStatus
+    )
+})
+}
+    
+open func list(prefix: String)throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_list(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(prefix),uniffiCallStatus
+    )
+})
 }
     
 open func read(key: String)throws  -> String?  {
@@ -2894,18 +5247,19 @@ open func removeSecret(key: String)throws   {try rustCallWithError(FfiConverterT
 }
     
     /**
-     * Exclusive ownership of the store (`store_busy` when taken).
+     * Returns Held when another owner holds this named lock; errors are failures only.
      */
-open func lock(key: String)throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
+open func lock(key: String)throws  -> PalLockOutcome  {
+    return try  FfiConverterTypePalLockOutcome_lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_hostpal_lock(
             self.uniffiCloneHandle(),
         FfiConverterString.lower(key),uniffiCallStatus
     )
-}
+})
 }
     
-open func unlock(key: String)  {try! rustCall() {
+open func unlock(key: String)throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_hostpal_unlock(
             self.uniffiCloneHandle(),
@@ -2948,7 +5302,7 @@ open func tool(invocation: String, cancel: CancelToken)throws  -> ToolOutput  {
      * `{clientData, clientDataHash, platform}` → `{platform, token, keyId?}`.
      */
 open func attest(request: String, timeoutMs: UInt64)throws  -> String  {
-    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCorePalError_lift) {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_hostpal_attest(
             self.uniffiCloneHandle(),
@@ -3003,11 +5357,24 @@ open func wake(atMs: Double?)  {try! rustCall() {
      * `[{id, at}]`, `at` ISO UTC). Arm a timer or OS task that calls `deliver_due`, or just
      * return: the notes still come at the next `deliver_due`. An error never fails the turn.
      */
-open func schedule(entries: String)throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
+open func schedule(entries: String)throws   {try rustCallWithError(FfiConverterTypeCorePalError_lift) {
         uniffiCallStatus in
     uniffi_croche_ffi_fn_method_hostpal_schedule(
             self.uniffiCloneHandle(),
         FfiConverterString.lower(entries),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * OS install only. Core owns the fixed identifier and weak wake object.
+     */
+open func registerBackground(identifier: String, wake: CoreBackgroundWake)throws   {try rustCallWithError(FfiConverterTypeCorePalError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_method_hostpal_register_background(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(identifier),
+        FfiConverterTypeCoreBackgroundWake_lower(wake),uniffiCallStatus
     )
 }
 }
@@ -3123,6 +5490,210 @@ fileprivate struct UniffiCallbackInterfaceHostPal {
                 fatalError("Uniffi callback interface HostPal: handle missing in uniffiClone")
             }
         },
+        streamPlatform: { (
+            uniffiHandle: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> HostStreamPlatform in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.streamPlatform(
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterTypeHostStreamPlatform_lower($0) }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        imageCodecAvailable: { (
+            uniffiHandle: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<Int8>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> Bool in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.imageCodecAvailable(
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterBool.lower($0) }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        readImage: { (
+            uniffiHandle: UInt64,
+            request: RustBuffer,
+            cancel: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> Data in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.readImage(
+                     request: try FfiConverterTypePalImageReadRequest_lift(request),
+                     cancel: try FfiConverterTypeCancelToken_lift(cancel)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterData.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        prepareImage: { (
+            uniffiHandle: UInt64,
+            source: RustBuffer,
+            plan: RustBuffer,
+            cancel: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> PalImageBytes in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.prepareImage(
+                     source: try FfiConverterTypePalImageBytes_lift(source),
+                     plan: try FfiConverterTypePalImagePreparePlan_lift(plan),
+                     cancel: try FfiConverterTypeCancelToken_lift(cancel)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterTypePalImageBytes_lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        releaseImage: { (
+            uniffiHandle: UInt64,
+            capture: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.releaseImage(
+                     capture: try FfiConverterString.lift(capture)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        decodeImage: { (
+            uniffiHandle: UInt64,
+            bytes: RustBuffer,
+            options: RustBuffer,
+            cancel: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> PalDecodedImage in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.decodeImage(
+                     bytes: try FfiConverterData.lift(bytes),
+                     options: try FfiConverterTypePalImageDecodeOptions_lift(options),
+                     cancel: try FfiConverterTypeCancelToken_lift(cancel)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterTypePalDecodedImage_lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        renderImage: { (
+            uniffiHandle: UInt64,
+            request: RustBuffer,
+            cancel: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> Data in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.renderImage(
+                     request: try FfiConverterTypePalImageRenderRequest_lift(request),
+                     cancel: try FfiConverterTypeCancelToken_lift(cancel)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterData.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        releaseDecodedImage: { (
+            uniffiHandle: UInt64,
+            handle: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.releaseDecodedImage(
+                     handle: try FfiConverterString.lift(handle)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
         http: { (
             uniffiHandle: UInt64,
             request: RustBuffer,
@@ -3145,6 +5716,105 @@ fileprivate struct UniffiCallbackInterfaceHostPal {
 
             
             let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        resolve: { (
+            uniffiHandle: UInt64,
+            host: RustBuffer,
+            cancel: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> [String] in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.resolve(
+                     host: try FfiConverterString.lift(host),
+                     cancel: try FfiConverterTypeCancelToken_lift(cancel)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterSequenceString.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        platformFacts: { (
+            uniffiHandle: UInt64,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> PalPlatformFacts in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.platformFacts(
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterTypePalPlatformFacts_lower($0) }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        readAsset: { (
+            uniffiHandle: UInt64,
+            path: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> Data? in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.readAsset(
+                     path: try FfiConverterString.lift(path)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterOptionData.lower($0) }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        list: { (
+            uniffiHandle: UInt64,
+            prefix: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> [String] in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.list(
+                     prefix: try FfiConverterString.lift(prefix)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterSequenceString.lower($0) }
             uniffiTraitInterfaceCallWithError(
                 callStatus: uniffiCallStatus,
                 makeCall: makeCall,
@@ -3309,11 +5979,11 @@ fileprivate struct UniffiCallbackInterfaceHostPal {
         lock: { (
             uniffiHandle: UInt64,
             key: RustBuffer,
-            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
             uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
         ) in
             let makeCall = {
-                () throws -> () in
+                () throws -> PalLockOutcome in
                 guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
                     throw UniffiInternalError.unexpectedStaleHandle
                 }
@@ -3323,7 +5993,7 @@ fileprivate struct UniffiCallbackInterfaceHostPal {
             }
 
             
-            let writeReturn = { () }
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterTypePalLockOutcome_lower($0) }
             uniffiTraitInterfaceCallWithError(
                 callStatus: uniffiCallStatus,
                 makeCall: makeCall,
@@ -3342,17 +6012,18 @@ fileprivate struct UniffiCallbackInterfaceHostPal {
                 guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
                     throw UniffiInternalError.unexpectedStaleHandle
                 }
-                return uniffiObj.unlock(
+                return try uniffiObj.unlock(
                      key: try FfiConverterString.lift(key)
                 )
             }
 
             
             let writeReturn = { () }
-            uniffiTraitInterfaceCall(
+            uniffiTraitInterfaceCallWithError(
                 callStatus: uniffiCallStatus,
                 makeCall: makeCall,
-                writeReturn: writeReturn
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeFfiError_lower
             )
         },
         storeIdentity: { (
@@ -3428,7 +6099,7 @@ fileprivate struct UniffiCallbackInterfaceHostPal {
                 callStatus: uniffiCallStatus,
                 makeCall: makeCall,
                 writeReturn: writeReturn,
-                lowerError: FfiConverterTypeFfiError_lower
+                lowerError: FfiConverterTypeCorePalError_lower
             )
         },
         nowMs: { (
@@ -3545,7 +6216,34 @@ fileprivate struct UniffiCallbackInterfaceHostPal {
                 callStatus: uniffiCallStatus,
                 makeCall: makeCall,
                 writeReturn: writeReturn,
-                lowerError: FfiConverterTypeFfiError_lower
+                lowerError: FfiConverterTypeCorePalError_lower
+            )
+        },
+        registerBackground: { (
+            uniffiHandle: UInt64,
+            identifier: RustBuffer,
+            wake: UInt64,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeHostPal.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return try uniffiObj.registerBackground(
+                     identifier: try FfiConverterString.lift(identifier),
+                     wake: try FfiConverterTypeCoreBackgroundWake_lift(wake)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCallWithError(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn,
+                lowerError: FfiConverterTypeCorePalError_lower
             )
         },
         archiveAppendLine: { (
@@ -4459,6 +7157,251 @@ public func FfiConverterTypeArchiveEntry_lower(_ value: ArchiveEntry) -> RustBuf
 }
 
 
+/**
+ * Owned source bytes, indexed into input.input. Never serialized or logged.
+ */
+public struct CoreImageInput: Equatable, Hashable {
+    public var element: UInt32
+    public var bytes: Data
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(element: UInt32, bytes: Data) {
+        self.element = element
+        self.bytes = bytes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CoreImageInput: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreImageInput: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreImageInput {
+        return
+            try CoreImageInput(
+                element: FfiConverterUInt32.read(from: &buf), 
+                bytes: FfiConverterData.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CoreImageInput, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.element, into: &buf)
+        FfiConverterData.write(value.bytes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreImageInput_lift(_ buf: RustBuffer) throws -> CoreImageInput {
+    return try FfiConverterTypeCoreImageInput.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreImageInput_lower(_ value: CoreImageInput) -> RustBuffer {
+    return FfiConverterTypeCoreImageInput.lower(value)
+}
+
+
+public struct CoreToolRegistration {
+    public var tool: CoreToolDefinition
+    /**
+     * None = bare definition. Some = WHOLE wrapper JSON, with only the opaque
+     * tool reference replaced by null. Preserve bind and ALL unknown keys.
+     */
+    public var optionsJson: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(tool: CoreToolDefinition, 
+        /**
+         * None = bare definition. Some = WHOLE wrapper JSON, with only the opaque
+         * tool reference replaced by null. Preserve bind and ALL unknown keys.
+         */optionsJson: String?) {
+        self.tool = tool
+        self.optionsJson = optionsJson
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CoreToolRegistration: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreToolRegistration: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreToolRegistration {
+        return
+            try CoreToolRegistration(
+                tool: FfiConverterTypeCoreToolDefinition.read(from: &buf), 
+                optionsJson: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CoreToolRegistration, into buf: inout [UInt8]) {
+        FfiConverterTypeCoreToolDefinition.write(value.tool, into: &buf)
+        FfiConverterOptionString.write(value.optionsJson, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreToolRegistration_lift(_ buf: RustBuffer) throws -> CoreToolRegistration {
+    return try FfiConverterTypeCoreToolRegistration.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreToolRegistration_lower(_ value: CoreToolRegistration) -> RustBuffer {
+    return FfiConverterTypeCoreToolRegistration.lower(value)
+}
+
+
+public struct PalCapturedImageSource: Equatable, Hashable {
+    public var element: UInt32
+    public var kind: String
+    public var token: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(element: UInt32, kind: String, token: String) {
+        self.element = element
+        self.kind = kind
+        self.token = token
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalCapturedImageSource: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalCapturedImageSource: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalCapturedImageSource {
+        return
+            try PalCapturedImageSource(
+                element: FfiConverterUInt32.read(from: &buf), 
+                kind: FfiConverterString.read(from: &buf), 
+                token: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalCapturedImageSource, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.element, into: &buf)
+        FfiConverterString.write(value.kind, into: &buf)
+        FfiConverterString.write(value.token, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalCapturedImageSource_lift(_ buf: RustBuffer) throws -> PalCapturedImageSource {
+    return try FfiConverterTypePalCapturedImageSource.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalCapturedImageSource_lower(_ value: PalCapturedImageSource) -> RustBuffer {
+    return FfiConverterTypePalCapturedImageSource.lower(value)
+}
+
+
+public struct PalDecodedImage: Equatable, Hashable {
+    public var handle: String
+    public var width: UInt32
+    public var height: UInt32
+    /**
+     * Some(true) means a non-opaque pixel, NOT just an alpha-capable format.
+     */
+    public var hasAlpha: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(handle: String, width: UInt32, height: UInt32, 
+        /**
+         * Some(true) means a non-opaque pixel, NOT just an alpha-capable format.
+         */hasAlpha: Bool?) {
+        self.handle = handle
+        self.width = width
+        self.height = height
+        self.hasAlpha = hasAlpha
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalDecodedImage: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalDecodedImage: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalDecodedImage {
+        return
+            try PalDecodedImage(
+                handle: FfiConverterString.read(from: &buf), 
+                width: FfiConverterUInt32.read(from: &buf), 
+                height: FfiConverterUInt32.read(from: &buf), 
+                hasAlpha: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalDecodedImage, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.handle, into: &buf)
+        FfiConverterUInt32.write(value.width, into: &buf)
+        FfiConverterUInt32.write(value.height, into: &buf)
+        FfiConverterOptionBool.write(value.hasAlpha, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalDecodedImage_lift(_ buf: RustBuffer) throws -> PalDecodedImage {
+    return try FfiConverterTypePalDecodedImage.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalDecodedImage_lower(_ value: PalDecodedImage) -> RustBuffer {
+    return FfiConverterTypePalDecodedImage.lower(value)
+}
+
+
 public struct PalHeader: Equatable, Hashable {
     public var name: String
     public var value: String
@@ -4518,20 +7461,26 @@ public func FfiConverterTypePalHeader_lower(_ value: PalHeader) -> RustBuffer {
  * host's own, no redirects, and give up after `timeout_ms`.
  */
 public struct PalHttpRequest: Equatable, Hashable {
+    public var connectTo: String?
     public var url: String
     public var method: String
     public var headers: [PalHeader]
-    public var body: String
+    public var body: String?
     public var timeoutMs: UInt64
+    public var responseMode: String
+    public var maxResponseBytes: UInt64
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(url: String, method: String, headers: [PalHeader], body: String, timeoutMs: UInt64) {
+    public init(connectTo: String?, url: String, method: String, headers: [PalHeader], body: String?, timeoutMs: UInt64, responseMode: String, maxResponseBytes: UInt64) {
+        self.connectTo = connectTo
         self.url = url
         self.method = method
         self.headers = headers
         self.body = body
         self.timeoutMs = timeoutMs
+        self.responseMode = responseMode
+        self.maxResponseBytes = maxResponseBytes
     }
 
     
@@ -4550,20 +7499,26 @@ public struct FfiConverterTypePalHttpRequest: FfiConverterRustBuffer {
     public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalHttpRequest {
         return
             try PalHttpRequest(
+                connectTo: FfiConverterOptionString.read(from: &buf), 
                 url: FfiConverterString.read(from: &buf), 
                 method: FfiConverterString.read(from: &buf), 
                 headers: FfiConverterSequenceTypePalHeader.read(from: &buf), 
-                body: FfiConverterString.read(from: &buf), 
-                timeoutMs: FfiConverterUInt64.read(from: &buf)
+                body: FfiConverterOptionString.read(from: &buf), 
+                timeoutMs: FfiConverterUInt64.read(from: &buf), 
+                responseMode: FfiConverterString.read(from: &buf), 
+                maxResponseBytes: FfiConverterUInt64.read(from: &buf)
         )
     }
 
     public static func write(_ value: PalHttpRequest, into buf: inout [UInt8]) {
+        FfiConverterOptionString.write(value.connectTo, into: &buf)
         FfiConverterString.write(value.url, into: &buf)
         FfiConverterString.write(value.method, into: &buf)
         FfiConverterSequenceTypePalHeader.write(value.headers, into: &buf)
-        FfiConverterString.write(value.body, into: &buf)
+        FfiConverterOptionString.write(value.body, into: &buf)
         FfiConverterUInt64.write(value.timeoutMs, into: &buf)
+        FfiConverterString.write(value.responseMode, into: &buf)
+        FfiConverterUInt64.write(value.maxResponseBytes, into: &buf)
     }
 }
 
@@ -4583,8 +7538,360 @@ public func FfiConverterTypePalHttpRequest_lower(_ value: PalHttpRequest) -> Rus
 }
 
 
+public struct PalImageBytes: Equatable, Hashable {
+    public var bytes: Data
+    public var mime: String
+    public var sha256: Data
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(bytes: Data, mime: String, sha256: Data) {
+        self.bytes = bytes
+        self.mime = mime
+        self.sha256 = sha256
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalImageBytes: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalImageBytes: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalImageBytes {
+        return
+            try PalImageBytes(
+                bytes: FfiConverterData.read(from: &buf), 
+                mime: FfiConverterString.read(from: &buf), 
+                sha256: FfiConverterData.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalImageBytes, into buf: inout [UInt8]) {
+        FfiConverterData.write(value.bytes, into: &buf)
+        FfiConverterString.write(value.mime, into: &buf)
+        FfiConverterData.write(value.sha256, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageBytes_lift(_ buf: RustBuffer) throws -> PalImageBytes {
+    return try FfiConverterTypePalImageBytes.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageBytes_lower(_ value: PalImageBytes) -> RustBuffer {
+    return FfiConverterTypePalImageBytes.lower(value)
+}
+
+
+public struct PalImageDecodeOptions: Equatable, Hashable {
+    public var frame: UInt32
+    public var applyOrientation: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(frame: UInt32, applyOrientation: Bool) {
+        self.frame = frame
+        self.applyOrientation = applyOrientation
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalImageDecodeOptions: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalImageDecodeOptions: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalImageDecodeOptions {
+        return
+            try PalImageDecodeOptions(
+                frame: FfiConverterUInt32.read(from: &buf), 
+                applyOrientation: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalImageDecodeOptions, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.frame, into: &buf)
+        FfiConverterBool.write(value.applyOrientation, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageDecodeOptions_lift(_ buf: RustBuffer) throws -> PalImageDecodeOptions {
+    return try FfiConverterTypePalImageDecodeOptions.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageDecodeOptions_lower(_ value: PalImageDecodeOptions) -> RustBuffer {
+    return FfiConverterTypePalImageDecodeOptions.lower(value)
+}
+
+
+public struct PalImagePreparePlan: Equatable, Hashable {
+    public var maxSide: UInt32?
+    public var maxBytes: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(maxSide: UInt32?, maxBytes: UInt64) {
+        self.maxSide = maxSide
+        self.maxBytes = maxBytes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalImagePreparePlan: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalImagePreparePlan: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalImagePreparePlan {
+        return
+            try PalImagePreparePlan(
+                maxSide: FfiConverterOptionUInt32.read(from: &buf), 
+                maxBytes: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalImagePreparePlan, into buf: inout [UInt8]) {
+        FfiConverterOptionUInt32.write(value.maxSide, into: &buf)
+        FfiConverterUInt64.write(value.maxBytes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImagePreparePlan_lift(_ buf: RustBuffer) throws -> PalImagePreparePlan {
+    return try FfiConverterTypePalImagePreparePlan.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImagePreparePlan_lower(_ value: PalImagePreparePlan) -> RustBuffer {
+    return FfiConverterTypePalImagePreparePlan.lower(value)
+}
+
+
+public struct PalImageReadRequest: Equatable, Hashable {
+    public var source: PalImageReadSource
+    public var maxBytes: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(source: PalImageReadSource, maxBytes: UInt64) {
+        self.source = source
+        self.maxBytes = maxBytes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalImageReadRequest: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalImageReadRequest: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalImageReadRequest {
+        return
+            try PalImageReadRequest(
+                source: FfiConverterTypePalImageReadSource.read(from: &buf), 
+                maxBytes: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalImageReadRequest, into buf: inout [UInt8]) {
+        FfiConverterTypePalImageReadSource.write(value.source, into: &buf)
+        FfiConverterUInt64.write(value.maxBytes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageReadRequest_lift(_ buf: RustBuffer) throws -> PalImageReadRequest {
+    return try FfiConverterTypePalImageReadRequest.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageReadRequest_lower(_ value: PalImageReadRequest) -> RustBuffer {
+    return FfiConverterTypePalImageReadRequest.lower(value)
+}
+
+
+public struct PalImageRenderRequest: Equatable, Hashable {
+    public var handle: String
+    public var width: UInt32
+    public var height: UInt32
+    public var format: PalImageFormat
+    public var quality: Double?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(handle: String, width: UInt32, height: UInt32, format: PalImageFormat, quality: Double?) {
+        self.handle = handle
+        self.width = width
+        self.height = height
+        self.format = format
+        self.quality = quality
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalImageRenderRequest: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalImageRenderRequest: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalImageRenderRequest {
+        return
+            try PalImageRenderRequest(
+                handle: FfiConverterString.read(from: &buf), 
+                width: FfiConverterUInt32.read(from: &buf), 
+                height: FfiConverterUInt32.read(from: &buf), 
+                format: FfiConverterTypePalImageFormat.read(from: &buf), 
+                quality: FfiConverterOptionDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalImageRenderRequest, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.handle, into: &buf)
+        FfiConverterUInt32.write(value.width, into: &buf)
+        FfiConverterUInt32.write(value.height, into: &buf)
+        FfiConverterTypePalImageFormat.write(value.format, into: &buf)
+        FfiConverterOptionDouble.write(value.quality, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageRenderRequest_lift(_ buf: RustBuffer) throws -> PalImageRenderRequest {
+    return try FfiConverterTypePalImageRenderRequest.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageRenderRequest_lower(_ value: PalImageRenderRequest) -> RustBuffer {
+    return FfiConverterTypePalImageRenderRequest.lower(value)
+}
+
+
+public struct PalPlatformFacts: Equatable, Hashable {
+    public var targetKind: PalTargetKind
+    public var debuggable: Bool?
+    public var locale: String?
+    public var attestationPlatform: String?
+    public var browserFetch: Bool?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(targetKind: PalTargetKind, debuggable: Bool?, locale: String?, attestationPlatform: String?, browserFetch: Bool?) {
+        self.targetKind = targetKind
+        self.debuggable = debuggable
+        self.locale = locale
+        self.attestationPlatform = attestationPlatform
+        self.browserFetch = browserFetch
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PalPlatformFacts: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalPlatformFacts: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalPlatformFacts {
+        return
+            try PalPlatformFacts(
+                targetKind: FfiConverterTypePalTargetKind.read(from: &buf), 
+                debuggable: FfiConverterOptionBool.read(from: &buf), 
+                locale: FfiConverterOptionString.read(from: &buf), 
+                attestationPlatform: FfiConverterOptionString.read(from: &buf), 
+                browserFetch: FfiConverterOptionBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PalPlatformFacts, into buf: inout [UInt8]) {
+        FfiConverterTypePalTargetKind.write(value.targetKind, into: &buf)
+        FfiConverterOptionBool.write(value.debuggable, into: &buf)
+        FfiConverterOptionString.write(value.locale, into: &buf)
+        FfiConverterOptionString.write(value.attestationPlatform, into: &buf)
+        FfiConverterOptionBool.write(value.browserFetch, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalPlatformFacts_lift(_ buf: RustBuffer) throws -> PalPlatformFacts {
+    return try FfiConverterTypePalPlatformFacts.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalPlatformFacts_lower(_ value: PalPlatformFacts) -> RustBuffer {
+    return FfiConverterTypePalPlatformFacts.lower(value)
+}
+
+
 /**
- * `Croche.open`'s options (#377 6078466532). `host` and `config` are JSON text.
+ * `Croche.open`'s options (#377 6078466532). `host` and `bundledConfig` are JSON text.
  */
 public struct ProjectOpenOptions: Equatable, Hashable {
     /**
@@ -4596,7 +7903,7 @@ public struct ProjectOpenOptions: Equatable, Hashable {
     /**
      * A ProjectConfig, or the export `{version, revision, config}`.
      */
-    public var config: String
+    public var bundledConfig: String
     /**
      * The tool names the app registered handlers for.
      */
@@ -4615,13 +7922,13 @@ public struct ProjectOpenOptions: Equatable, Hashable {
          */host: String, user: String?, 
         /**
          * A ProjectConfig, or the export `{version, revision, config}`.
-         */config: String, 
+         */bundledConfig: String, 
         /**
          * The tool names the app registered handlers for.
          */handlers: [String], language: String?, streaming: Bool, backgroundSync: Bool, maintenanceIntervalMs: Double) {
         self.host = host
         self.user = user
-        self.config = config
+        self.bundledConfig = bundledConfig
         self.handlers = handlers
         self.language = language
         self.streaming = streaming
@@ -4647,7 +7954,7 @@ public struct FfiConverterTypeProjectOpenOptions: FfiConverterRustBuffer {
             try ProjectOpenOptions(
                 host: FfiConverterString.read(from: &buf), 
                 user: FfiConverterOptionString.read(from: &buf), 
-                config: FfiConverterString.read(from: &buf), 
+                bundledConfig: FfiConverterString.read(from: &buf), 
                 handlers: FfiConverterSequenceString.read(from: &buf), 
                 language: FfiConverterOptionString.read(from: &buf), 
                 streaming: FfiConverterBool.read(from: &buf), 
@@ -4659,7 +7966,7 @@ public struct FfiConverterTypeProjectOpenOptions: FfiConverterRustBuffer {
     public static func write(_ value: ProjectOpenOptions, into buf: inout [UInt8]) {
         FfiConverterString.write(value.host, into: &buf)
         FfiConverterOptionString.write(value.user, into: &buf)
-        FfiConverterString.write(value.config, into: &buf)
+        FfiConverterString.write(value.bundledConfig, into: &buf)
         FfiConverterSequenceString.write(value.handlers, into: &buf)
         FfiConverterOptionString.write(value.language, into: &buf)
         FfiConverterBool.write(value.streaming, into: &buf)
@@ -4883,6 +8190,247 @@ public func FfiConverterTypeToolOutput_lower(_ value: ToolOutput) -> RustBuffer 
 
 
 /**
+ * Final S1 transport carrier; the SDK passes these Core fields through.
+ */
+public 
+enum CoreApiError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Failure(code: String, detail: String, category: String, path: String?, retryAfter: UInt64?
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension CoreApiError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreApiError: FfiConverterRustBuffer {
+    typealias SwiftType = CoreApiError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreApiError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Failure(
+            code: try FfiConverterString.read(from: &buf), 
+            detail: try FfiConverterString.read(from: &buf), 
+            category: try FfiConverterString.read(from: &buf), 
+            path: try FfiConverterOptionString.read(from: &buf), 
+            retryAfter: try FfiConverterOptionUInt64.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CoreApiError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Failure(code,detail,category,path,retryAfter):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(code, into: &buf)
+            FfiConverterString.write(detail, into: &buf)
+            FfiConverterString.write(category, into: &buf)
+            FfiConverterOptionString.write(path, into: &buf)
+            FfiConverterOptionUInt64.write(retryAfter, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreApiError_lift(_ buf: RustBuffer) throws -> CoreApiError {
+    return try FfiConverterTypeCoreApiError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreApiError_lower(_ value: CoreApiError) -> RustBuffer {
+    return FfiConverterTypeCoreApiError.lower(value)
+}
+
+
+public 
+enum CorePalError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Failure(code: String, detail: String
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension CorePalError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCorePalError: FfiConverterRustBuffer {
+    typealias SwiftType = CorePalError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CorePalError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Failure(
+            code: try FfiConverterString.read(from: &buf), 
+            detail: try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CorePalError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Failure(code,detail):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(code, into: &buf)
+            FfiConverterString.write(detail, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCorePalError_lift(_ buf: RustBuffer) throws -> CorePalError {
+    return try FfiConverterTypeCorePalError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCorePalError_lower(_ value: CorePalError) -> RustBuffer {
+    return FfiConverterTypeCorePalError.lower(value)
+}
+
+
+/**
+ * Storage callbacks report exception text only. Core owns all error policy.
+ */
+public 
+enum CoreStorageFailure: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Failure(detail: String
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension CoreStorageFailure: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoreStorageFailure: FfiConverterRustBuffer {
+    typealias SwiftType = CoreStorageFailure
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreStorageFailure {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Failure(
+            detail: try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CoreStorageFailure, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Failure(detail):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(detail, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreStorageFailure_lift(_ buf: RustBuffer) throws -> CoreStorageFailure {
+    return try FfiConverterTypeCoreStorageFailure.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoreStorageFailure_lower(_ value: CoreStorageFailure) -> RustBuffer {
+    return FfiConverterTypeCoreStorageFailure.lower(value)
+}
+
+
+/**
  * A Runtime failure, or a host failure reported to the Runtime: a stable code and a message.
  */
 public 
@@ -4960,6 +8508,366 @@ public func FfiConverterTypeFfiError_lift(_ buf: RustBuffer) throws -> FfiError 
 public func FfiConverterTypeFfiError_lower(_ value: FfiError) -> RustBuffer {
     return FfiConverterTypeFfiError.lower(value)
 }
+
+
+/**
+ * A host execution fact, not a host-selected delta batching interval.
+ */
+
+public enum HostStreamPlatform: Equatable, Hashable {
+    
+    case reactNative
+    case other
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension HostStreamPlatform: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHostStreamPlatform: FfiConverterRustBuffer {
+    typealias SwiftType = HostStreamPlatform
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> HostStreamPlatform {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .reactNative
+        
+        case 2: return .other
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: HostStreamPlatform, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .reactNative:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .other:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHostStreamPlatform_lift(_ buf: RustBuffer) throws -> HostStreamPlatform {
+    return try FfiConverterTypeHostStreamPlatform.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHostStreamPlatform_lower(_ value: HostStreamPlatform) -> RustBuffer {
+    return FfiConverterTypeHostStreamPlatform.lower(value)
+}
+
+
+
+
+public enum PalImageFormat: Equatable, Hashable {
+    
+    case png
+    case jpeg
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PalImageFormat: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalImageFormat: FfiConverterRustBuffer {
+    typealias SwiftType = PalImageFormat
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalImageFormat {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .png
+        
+        case 2: return .jpeg
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PalImageFormat, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .png:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .jpeg:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageFormat_lift(_ buf: RustBuffer) throws -> PalImageFormat {
+    return try FfiConverterTypePalImageFormat.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageFormat_lower(_ value: PalImageFormat) -> RustBuffer {
+    return FfiConverterTypePalImageFormat.lower(value)
+}
+
+
+
+
+public enum PalImageReadSource: Equatable, Hashable {
+    
+    case local(uri: String
+    )
+    case capture(token: String
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PalImageReadSource: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalImageReadSource: FfiConverterRustBuffer {
+    typealias SwiftType = PalImageReadSource
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalImageReadSource {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .local(uri: try FfiConverterString.read(from: &buf)
+        )
+        
+        case 2: return .capture(token: try FfiConverterString.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PalImageReadSource, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .local(uri):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(uri, into: &buf)
+            
+        
+        case let .capture(token):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(token, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageReadSource_lift(_ buf: RustBuffer) throws -> PalImageReadSource {
+    return try FfiConverterTypePalImageReadSource.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalImageReadSource_lower(_ value: PalImageReadSource) -> RustBuffer {
+    return FfiConverterTypePalImageReadSource.lower(value)
+}
+
+
+
+
+public enum PalLockOutcome: Equatable, Hashable {
+    
+    case acquired
+    case held
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PalLockOutcome: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalLockOutcome: FfiConverterRustBuffer {
+    typealias SwiftType = PalLockOutcome
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalLockOutcome {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .acquired
+        
+        case 2: return .held
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PalLockOutcome, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .acquired:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .held:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalLockOutcome_lift(_ buf: RustBuffer) throws -> PalLockOutcome {
+    return try FfiConverterTypePalLockOutcome.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalLockOutcome_lower(_ value: PalLockOutcome) -> RustBuffer {
+    return FfiConverterTypePalLockOutcome.lower(value)
+}
+
+
+
+/**
+ * The platform abstraction: the only part a native host implements. Every method blocks
+ * its thread until done. `http`, `tool` and `attest` are called on a worker thread; they
+ * should honour cancellation (and `http`/`attest` their `timeout_ms`) to free it, but the
+ * Runtime does not depend on it: past the deadline the effect has its result and anything
+ * late is dropped. `tool` has no deadline of its own: the Runtime is its only clock.
+ */
+
+public enum PalTargetKind: Equatable, Hashable {
+    
+    case iosDevice
+    case iosSimulator
+    case android
+    case other
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PalTargetKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePalTargetKind: FfiConverterRustBuffer {
+    typealias SwiftType = PalTargetKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PalTargetKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .iosDevice
+        
+        case 2: return .iosSimulator
+        
+        case 3: return .android
+        
+        case 4: return .other
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PalTargetKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .iosDevice:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .iosSimulator:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .android:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .other:
+            writeInt(&buf, Int32(4))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalTargetKind_lift(_ buf: RustBuffer) throws -> PalTargetKind {
+    return try FfiConverterTypePalTargetKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePalTargetKind_lower(_ value: PalTargetKind) -> RustBuffer {
+    return FfiConverterTypePalTargetKind.lower(value)
+}
+
 
 
 /**
@@ -5049,6 +8957,30 @@ public func FfiConverterTypeStorageCapability_lower(_ value: StorageCapability) 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
+    typealias SwiftType = UInt32?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt32.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt32.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
     typealias SwiftType = UInt64?
 
@@ -5065,6 +8997,30 @@ fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterUInt64.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionInt64: FfiConverterRustBuffer {
+    typealias SwiftType = Int64?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterInt64.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterInt64.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -5097,6 +9053,30 @@ fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionBool: FfiConverterRustBuffer {
+    typealias SwiftType = Bool?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterBool.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterBool.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
     typealias SwiftType = String?
 
@@ -5121,6 +9101,30 @@ fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionData: FfiConverterRustBuffer {
+    typealias SwiftType = Data?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterData.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterData.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeCancelToken: FfiConverterRustBuffer {
     typealias SwiftType = CancelToken?
 
@@ -5137,6 +9141,54 @@ fileprivate struct FfiConverterOptionTypeCancelToken: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeCancelToken.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeCoreEventSink: FfiConverterRustBuffer {
+    typealias SwiftType = CoreEventSink?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCoreEventSink.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCoreEventSink.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeCoreStoragePal: FfiConverterRustBuffer {
+    typealias SwiftType = CoreStoragePal?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCoreStoragePal.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCoreStoragePal.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -5243,6 +9295,81 @@ fileprivate struct FfiConverterSequenceTypeArchiveEntry: FfiConverterRustBuffer 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeCoreImageInput: FfiConverterRustBuffer {
+    typealias SwiftType = [CoreImageInput]
+
+    public static func write(_ value: [CoreImageInput], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCoreImageInput.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CoreImageInput] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [CoreImageInput]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCoreImageInput.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeCoreToolRegistration: FfiConverterRustBuffer {
+    typealias SwiftType = [CoreToolRegistration]
+
+    public static func write(_ value: [CoreToolRegistration], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCoreToolRegistration.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CoreToolRegistration] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [CoreToolRegistration]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCoreToolRegistration.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypePalCapturedImageSource: FfiConverterRustBuffer {
+    typealias SwiftType = [PalCapturedImageSource]
+
+    public static func write(_ value: [PalCapturedImageSource], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypePalCapturedImageSource.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [PalCapturedImageSource] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [PalCapturedImageSource]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypePalCapturedImageSource.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypePalHeader: FfiConverterRustBuffer {
     typealias SwiftType = [PalHeader]
 
@@ -5290,23 +9417,6 @@ fileprivate struct FfiConverterSequenceTypeToolImage: FfiConverterRustBuffer {
     }
 }
 /**
- * `Croche.deleteStore` (R8): with `agent`, that agent's store for `user`, declared or not;
- * without, every agent the bundled `config` declares, all locked first (`store_busy` names one
- * open or busy, and nothing is deleted). `host` and `config` are JSON text. Blocks the calling
- * thread: call from a background thread.
- */
-public func deleteStore(pals: HostPalFactory, host: String, user: String?, config: String, agent: String?)throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
-        uniffiCallStatus in
-    uniffi_croche_ffi_fn_func_delete_store(
-        FfiConverterTypeHostPalFactory_lower(pals),
-        FfiConverterString.lower(host),
-        FfiConverterOptionString.lower(user),
-        FfiConverterString.lower(config),
-        FfiConverterOptionString.lower(agent),uniffiCallStatus
-    )
-}
-}
-/**
  * The configuration hash and default storage key for a configuration.
  */
 public func identity(config: String)throws  -> String  {
@@ -5316,6 +9426,83 @@ public func identity(config: String)throws  -> String  {
         FfiConverterString.lower(config),uniffiCallStatus
     )
 })
+}
+/**
+ * `truncate(text, max)`: the longest prefix of at most `max` UTF-16 code units, never splitting
+ * a surrogate pair (Core's one implementation; `vectors/truncate.json`). A `max` that is not a
+ * non-negative integer is `invalid_input` (a double, so React Native's number reaches Core as is).
+ */
+public func truncate(text: String, max: Double)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_func_truncate(
+        FfiConverterString.lower(text),
+        FfiConverterDouble.lower(max),uniffiCallStatus
+    )
+})
+}
+public func coreRegisterBackground(optionsJson: String, sink: CoreEventSink?, storage: CoreStoragePal?, platformStorage: CoreStoragePal?, host: HostPal, bindingFactsJson: String)throws   {try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_func_core_register_background(
+        FfiConverterString.lower(optionsJson),
+        FfiConverterOptionTypeCoreEventSink.lower(sink),
+        FfiConverterOptionTypeCoreStoragePal.lower(storage),
+        FfiConverterOptionTypeCoreStoragePal.lower(platformStorage),
+        FfiConverterTypeHostPal_lower(host),
+        FfiConverterString.lower(bindingFactsJson),uniffiCallStatus
+    )
+}
+}
+public func coreWakeTimes(openJson: String, queryJson: String?, storage: CoreStoragePal?, host: HostPal)throws  -> String  {
+    return try  FfiConverterString.lift(try rustCallWithError(FfiConverterTypeCoreApiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_func_core_wake_times(
+        FfiConverterString.lower(openJson),
+        FfiConverterOptionString.lower(queryJson),
+        FfiConverterOptionTypeCoreStoragePal.lower(storage),
+        FfiConverterTypeHostPal_lower(host),uniffiCallStatus
+    )
+})
+}
+/**
+ * One Core-owned definition; wrappers expose it as CrocheTools.webSearch.
+ */
+public func coreWebSearch() -> CoreToolDefinition  {
+    return try!  FfiConverterTypeCoreToolDefinition_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_func_core_web_search(uniffiCallStatus
+    )
+})
+}
+public func palAssetRead(host: HostPal, path: String)throws  -> Data?  {
+    return try  FfiConverterOptionData.lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_func_pal_asset_read(
+        FfiConverterTypeHostPal_lower(host),
+        FfiConverterString.lower(path),uniffiCallStatus
+    )
+})
+}
+/**
+ * Resolver facts, never approval: Core owns address policy.
+ */
+public func palResolve(host: HostPal, name: String)throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_func_pal_resolve(
+        FfiConverterTypeHostPal_lower(host),
+        FfiConverterString.lower(name),uniffiCallStatus
+    )
+})
+}
+public func palStorageConformance(first: HostPal, other: HostPal, scratch: String)throws   {try rustCallWithError(FfiConverterTypeFfiError_lift) {
+        uniffiCallStatus in
+    uniffi_croche_ffi_fn_func_pal_storage_conformance(
+        FfiConverterTypeHostPal_lower(first),
+        FfiConverterTypeHostPal_lower(other),
+        FfiConverterString.lower(scratch),uniffiCallStatus
+    )
+}
 }
 
 private enum InitializationResult {
@@ -5333,10 +9520,28 @@ private let initializationResult: InitializationResult = {
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_croche_ffi_checksum_func_delete_store() != 5314) {
+    if (uniffi_croche_ffi_checksum_func_identity() != 64658) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_croche_ffi_checksum_func_identity() != 64658) {
+    if (uniffi_croche_ffi_checksum_func_truncate() != 31127) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_func_core_register_background() != 27596) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_func_core_wake_times() != 59999) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_func_core_web_search() != 2671) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_func_pal_asset_read() != 53581) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_func_pal_resolve() != 20766) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_func_pal_storage_conformance() != 2881) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_cancelcallback_cancelled() != 40792) {
@@ -5351,13 +9556,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_croche_ffi_checksum_method_canceltoken_on_cancel() != 5961) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_croche_ffi_checksum_method_coreproject_agent() != 1441) {
+    if (uniffi_croche_ffi_checksum_method_coreproject_agent() != 963) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_coreproject_agent_ids() != 10137) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_croche_ffi_checksum_method_coreproject_agent_with_options() != 11132) {
+    if (uniffi_croche_ffi_checksum_method_coreproject_agent_with_options() != 37138) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_coreproject_applied() != 46820) {
@@ -5369,13 +9574,16 @@ private let initializationResult: InitializationResult = {
     if (uniffi_croche_ffi_checksum_method_coreproject_croche_user_id() != 18985) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_croche_ffi_checksum_method_coreproject_delete_data() != 3924) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_croche_ffi_checksum_method_coreproject_installation_id() != 34527) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_croche_ffi_checksum_method_coreproject_user() != 63169) {
+    if (uniffi_croche_ffi_checksum_method_coreproject_list_instances() != 38) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_croche_ffi_checksum_method_coreruntime_adjust_budget() != 24039) {
+    if (uniffi_croche_ffi_checksum_method_coreproject_user() != 63169) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_coreruntime_agent_id() != 47441) {
@@ -5417,6 +9625,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_croche_ffi_checksum_method_coreruntime_deliver_due() != 55067) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_croche_ffi_checksum_method_coreruntime_effective_config() != 13016) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_croche_ffi_checksum_method_coreruntime_flush() != 1358) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -5427,6 +9638,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_coreruntime_instance() != 56401) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreruntime_is_closed() != 59948) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_coreruntime_log_id() != 11073) {
@@ -5463,6 +9677,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_coreruntime_reschedule() != 5144) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreruntime_reserve_send() != 9380) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_coreruntime_schedules() != 16483) {
@@ -5543,79 +9760,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_croche_ffi_checksum_method_coreruntime_wiki_set() != 30402) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_croche_ffi_checksum_method_coresendentry_submit() != 11872) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_croche_ffi_checksum_method_eventlistener_on_event() != 56434) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_croche_ffi_checksum_method_hostpal_http() != 7961) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_read() != 55841) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_write() != 65290) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_read_secret() != 17194) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_write_secret() != 37058) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_remove() != 6243) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_remove_secret() != 16457) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_lock() != 24350) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_unlock() != 20795) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_store_identity() != 52947) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_tool() != 28995) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_attest() != 21360) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_now_ms() != 42052) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_utc_offset_minutes() != 2952) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_random() != 49168) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_wake() != 26224) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_schedule() != 55494) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_archive_append_line() != 64107) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_archive_read_lines() != 32367) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_archive_replace_lines() != 278) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_archive_remove() != 42592) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_archive_entries() != 2779) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpal_storage_capability() != 50450) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_croche_ffi_checksum_method_hostpalfactory_pal() != 55699) {
+    if (uniffi_croche_ffi_checksum_method_hostpalfactory_pal() != 25305) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_method_httpsink_chunk() != 48306) {
@@ -5633,17 +9784,272 @@ private let initializationResult: InitializationResult = {
     if (uniffi_croche_ffi_checksum_method_pendingsend_wait() != 63785) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_croche_ffi_checksum_method_coreagent_cancel() != 52919) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_clear_history() != 55451) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_decide() != 28427) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_id() != 57502) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_instance() != 5536) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_memory_clear() != 29505) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_memory_delete() != 57373) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_memory_enabled() != 53155) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_memory_list() != 58344) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_request() != 17600) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_reset_tools() != 10873) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_reset_wiki() != 55482) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_send() != 26365) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_set_tools() != 9318) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_set_wiki() != 62526) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_shutdown() != 61548) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreagent_subscribe() != 63524) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_agent() != 24301) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_agent_ids() != 28083) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_debug_attach() != 61995) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_debug_detach() != 1078) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_delete_data() != 44602) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_deliver_due() != 22065) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_shutdown() != 12147) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_wiki_list() != 53076) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_wiki_put() != 33155) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_wiki_remove() != 46644) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corecroche_run_tool() != 37338) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coresubscription_ended() != 13504) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coresubscription_history() != 46846) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coresubscription_shutdown() != 9733) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coretooldefinition_name() != 9527) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coretoolexecute_execute() != 15754) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corebackgroundwake_run() != 6410) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coredelivery_complete() != 61867) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coredelivery_try_enter() != 55702) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_coreeventsink_deliver() != 57854) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_stream_platform() != 23179) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_image_codec_available() != 17661) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_read_image() != 57554) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_prepare_image() != 45969) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_release_image() != 11041) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_decode_image() != 13813) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_render_image() != 3830) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_release_decoded_image() != 64397) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_http() != 30036) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_resolve() != 18726) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_platform_facts() != 12744) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_read_asset() != 53692) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_list() != 18576) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_read() != 62489) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_write() != 41576) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_read_secret() != 62116) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_write_secret() != 30614) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_remove() != 3952) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_remove_secret() != 46937) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_lock() != 6288) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_unlock() != 9464) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_store_identity() != 31785) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_tool() != 708) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_attest() != 17999) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_now_ms() != 6419) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_utc_offset_minutes() != 5813) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_random() != 51770) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_wake() != 60166) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_schedule() != 59310) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_register_background() != 45599) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_archive_append_line() != 48114) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_archive_read_lines() != 58500) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_archive_replace_lines() != 31423) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_archive_remove() != 29999) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_archive_entries() != 6682) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_hostpal_storage_capability() != 53321) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_read() != 20691) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_write() != 47648) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_remove() != 28789) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_list() != 53421) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_lock() != 48430) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_unlock() != 4321) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_read_secret() != 23652) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_write_secret() != 37327) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_method_corestoragepal_remove_secret() != 48418) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_croche_ffi_checksum_constructor_canceltoken_new() != 57296) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_croche_ffi_checksum_constructor_coreproject_open() != 44212) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_croche_ffi_checksum_constructor_coreruntime_open() != 26302) {
+    if (uniffi_croche_ffi_checksum_constructor_coreruntime_open() != 7271) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_constructor_corecroche_open() != 41961) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_croche_ffi_checksum_constructor_coretooldefinition_new() != 19704) {
         return InitializationResult.apiChecksumMismatch
     }
 
     uniffiCallbackInitCancelCallback()
+    uniffiCallbackInitCoreEventSink()
+    uniffiCallbackInitCoreStoragePal()
+    uniffiCallbackInitCoreToolExecute()
     uniffiCallbackInitEventListener()
     uniffiCallbackInitHostPal()
     uniffiCallbackInitHostPalFactory()

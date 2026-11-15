@@ -11,7 +11,7 @@ import Darwin
 
 /// Where the Runtime credential lives, apart from the general state file. load returns an
 /// object (empty when nothing is stored). save replaces the whole object atomically.
-public protocol RuntimeSecretStore: Sendable {
+protocol RuntimeSecretStore: Sendable {
     func load() throws -> JSON
     func save(_ secrets: JSON) throws
     /// Removes the credential item for real; absence succeeds. No default implementation.
@@ -19,13 +19,13 @@ public protocol RuntimeSecretStore: Sendable {
 }
 
 /// The platform's attestation of this app binary, bound to `clientDataHash`.
-public struct RuntimeAttestation: Sendable {
-    public let token: String
-    public let keyId: String?
-    public init(token: String, keyId: String?) { self.token = token; self.keyId = keyId }
+struct RuntimeAttestation: Sendable {
+    let token: String
+    let keyId: String?
+    init(token: String, keyId: String?) { self.token = token; self.keyId = keyId }
 }
 
-public protocol RuntimeAttestor: Sendable {
+protocol RuntimeAttestor: Sendable {
     /// "ios-app-attest" or "android-play-integrity"; declared to the Core in config.
     var platform: String { get }
     /// `clientDataHash` is SHA-256(`clientData`), exactly as Cloud recomputes it.
@@ -37,7 +37,7 @@ public protocol RuntimeAttestor: Sendable {
 /// pending note after every change, at every open, and after every `deliverDue()`. The work it
 /// registers runs `deliverDue()`: inexact, never before that time. No exact alarms,
 /// notifications or permissions.
-public protocol RuntimeScheduler: Sendable {
+protocol RuntimeScheduler: Sendable {
     /// Replaces any earlier request with one at or after `earliest`. Idempotent: one request at a
     /// time, by identifier. Throw `CrocheError("not_configured", ...)` when the app is not set up
     /// for it: the Runtime reports `schedule.degraded` with that code and still delivers while
@@ -54,7 +54,7 @@ public protocol RuntimeScheduler: Sendable {
     /// this at most once per successful `attach`, however often it is closed.
     func detach()
 }
-public extension RuntimeScheduler {
+extension RuntimeScheduler {
     func attach() throws {}
     func detach() {}
 }
@@ -72,7 +72,7 @@ final class SchedulerClaims: @unchecked Sendable {
     func claim(_ identity: String, by: AnyObject) throws {
         try lock.withLock {
             if holders[identity] != nil {
-                throw CrocheError("scheduler_conflict", "Another open Runtime uses the \(what) \(identity); give each Runtime its own, or close it first")
+                throw LegacyCrocheError("scheduler_conflict", "Another open Runtime uses the \(what) \(identity); give each Runtime its own, or close it first")
             }
             holders[identity] = by
         }
@@ -87,15 +87,15 @@ final class SchedulerClaims: @unchecked Sendable {
 /// never another turn of the Runtime (Atlas, #323 P1-1); after the run ended it does nothing.
 /// The delivery's notes stay pending, registered again, for the next run or foreground.
 final class BackgroundDelivery: @unchecked Sendable {
-    private let open: @Sendable () async throws -> CrocheRuntime
+    private let open: @Sendable () async throws -> AgentEngine
     private let lock = NSLock()
     private var task: Task<Void, Never>?
     private var expired = false
-    init(open: @escaping @Sendable () async throws -> CrocheRuntime) { self.open = open }
+    init(open: @escaping @Sendable () async throws -> AgentEngine) { self.open = open }
     func start(_ done: @escaping @Sendable (Bool) -> Void) {
         let open = self.open
         let task = Task {
-            let runtime: CrocheRuntime
+            let runtime: AgentEngine
             do { runtime = try await open() } catch { done(false); return }
             // Cancelling this Task cancels this delivery only (`deliverDue`). Expired before it
             // began, it is cancelled at once, and its notes are registered again.
@@ -109,28 +109,28 @@ final class BackgroundDelivery: @unchecked Sendable {
 
 /// A 0600 file beside the state file. For hosts without a secret store (Linux, tests,
 /// command-line tools). On iOS and macOS apps, use KeychainSecretStore.
-public final class FileRuntimeSecretStore: RuntimeSecretStore, @unchecked Sendable {
+final class FileRuntimeSecretStore: RuntimeSecretStore, @unchecked Sendable {
     private let url: URL
     private let mutex = NSLock()
-    public init(url: URL) { self.url = url }
-    public func load() throws -> JSON {
+    init(url: URL) { self.url = url }
+    func load() throws -> JSON {
         mutex.lock(); defer { mutex.unlock() }
         guard FileManager.default.fileExists(atPath: url.path) else { return .object([:]) }
         let saved: JSON
         do { saved = try JSON(data: Data(contentsOf: url)) }
-        catch { throw CrocheError("corrupt_store", "Runtime credentials are unreadable; remove them to register again") }
-        guard saved.object != nil else { throw CrocheError("corrupt_store", "Runtime credentials must be an object") }
+        catch { throw LegacyCrocheError("corrupt_store", "Runtime credentials are unreadable; remove them to register again") }
+        guard saved.object != nil else { throw LegacyCrocheError("corrupt_store", "Runtime credentials must be an object") }
         return saved
     }
-    public func save(_ secrets: JSON) throws {
+    func save(_ secrets: JSON) throws {
         mutex.lock(); defer { mutex.unlock() }
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try secrets.encoded().write(to: url, options: .atomic)
         _ = chmod(url.path, S_IRUSR | S_IWUSR)
     }
-    public func remove() throws {
+    func remove() throws {
         try mutex.withLock {
-            if unlink(url.path) != 0 && errno != ENOENT { throw CrocheError("storage_error", "Could not remove Runtime credentials") }
+            if unlink(url.path) != 0 && errno != ENOENT { throw LegacyCrocheError("storage_error", "Could not remove Runtime credentials") }
         }
     }
 
@@ -143,11 +143,11 @@ import Security
 /// after the first unlock, never synced or restored to another device. It survives app
 /// reinstall on iOS, so a reinstall keeps the same Runtime (and its credit) rather than
 /// minting a new one.
-public final class KeychainSecretStore: RuntimeSecretStore, @unchecked Sendable {
+final class KeychainSecretStore: RuntimeSecretStore, @unchecked Sendable {
     private let service: String
     private let account: String
     /// `account` should be the Runtime's storage key, so each agent's store has its own item.
-    public init(service: String = "ai.croche.runtime", account: String) {
+    init(service: String = "ai.croche.runtime", account: String) {
         self.service = service; self.account = account
     }
     private var query: [String: Any] {
@@ -155,7 +155,7 @@ public final class KeychainSecretStore: RuntimeSecretStore, @unchecked Sendable 
          kSecAttrService as String: service,
          kSecAttrAccount as String: account]
     }
-    public func load() throws -> JSON {
+    func load() throws -> JSON {
         var lookup = query
         lookup[kSecReturnData as String] = true
         lookup[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -163,28 +163,28 @@ public final class KeychainSecretStore: RuntimeSecretStore, @unchecked Sendable 
         let status = SecItemCopyMatching(lookup as CFDictionary, &item)
         if status == errSecItemNotFound { return .object([:]) }
         guard status == errSecSuccess, let data = item as? Data else {
-            throw CrocheError("storage_error", "Keychain read failed (\(status))")
+            throw LegacyCrocheError("storage_error", "Keychain read failed (\(status))")
         }
         guard let saved = try? JSON(data: data), saved.object != nil else {
-            throw CrocheError("corrupt_store", "Runtime credentials are unreadable; remove them to register again")
+            throw LegacyCrocheError("corrupt_store", "Runtime credentials are unreadable; remove them to register again")
         }
         return saved
     }
-    public func save(_ secrets: JSON) throws {
+    func save(_ secrets: JSON) throws {
         let data = try secrets.encoded()
         let update = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
         if update == errSecSuccess { return }
-        guard update == errSecItemNotFound else { throw CrocheError("storage_error", "Keychain write failed (\(update))") }
+        guard update == errSecItemNotFound else { throw LegacyCrocheError("storage_error", "Keychain write failed (\(update))") }
         var add = query
         add[kSecValueData as String] = data
         add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         let status = SecItemAdd(add as CFDictionary, nil)
-        guard status == errSecSuccess else { throw CrocheError("storage_error", "Keychain write failed (\(status))") }
+        guard status == errSecSuccess else { throw LegacyCrocheError("storage_error", "Keychain write failed (\(status))") }
     }
-    public func remove() throws {
+    func remove() throws {
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw CrocheError("storage_error", "Keychain delete failed (\(status))")
+            throw LegacyCrocheError("storage_error", "Keychain delete failed (\(status))")
         }
     }
 
@@ -197,13 +197,13 @@ import DeviceCheck
 /// Apple App Attest. Each registration generates a fresh key and attests it against the
 /// Cloud challenge; Cloud checks the chain to Apple's root, the app id, and the nonce.
 /// Simulators cannot attest: use a development project with attestation off there.
-public struct AppAttestAttestor: RuntimeAttestor {
-    public let platform = "ios-app-attest"
-    public init() {}
-    public func attest(clientData: String, clientDataHash: Data) async throws -> RuntimeAttestation {
+struct AppAttestAttestor: RuntimeAttestor {
+    let platform = "ios-app-attest"
+    init() {}
+    func attest(clientData: String, clientDataHash: Data) async throws -> RuntimeAttestation {
         let service = DCAppAttestService.shared
         guard service.isSupported else {
-            throw CrocheError("attestation_unsupported", "App Attest is not available here (simulators cannot attest)")
+            throw LegacyCrocheError("attestation_unsupported", "App Attest is not available here (simulators cannot attest)")
         }
         let keyId = try await service.generateKey()
         let object = try await service.attestKey(keyId, clientDataHash: clientDataHash)

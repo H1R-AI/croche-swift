@@ -4,19 +4,19 @@ import CrocheFFI
 import UIKit
 #endif
 
-public struct ToolContext: Sendable {
-    public let data: JSON
-    public let cancellation: RuntimeCancellation
-    public var callId: String { data["callId"].string ?? "" }
-    public var messageId: String { data["messageId"].string ?? "" }
+struct LegacyToolContext: Sendable {
+    let data: JSON
+    let cancellation: RuntimeCancellation
+    var callId: String { data["callId"].string ?? "" }
+    var messageId: String { data["messageId"].string ?? "" }
     /// The opaque user id Croche issued; "" until Cloud has issued it.
-    public var userId: String { data["userId"].string ?? "" }
+    var userId: String { data["userId"].string ?? "" }
     /// Present when the Runtime config has an agentId.
-    public var agentId: String? { data["agentId"].string }
-    public var user: String? { data["user"].string }
-    public var crocheUserId: String? { data["crocheUserId"].string }
-    public var causedBy: [String] { data["causedBy"].array?.compactMap(\.string) ?? [] }
-    public var origin: String { data["origin"].string ?? "" }
+    var agentId: String? { data["agentId"].string }
+    var user: String? { data["user"].string }
+    var crocheUserId: String? { data["crocheUserId"].string }
+    var causedBy: [String] { data["causedBy"].array?.compactMap(\.string) ?? [] }
+    var origin: String { data["origin"].string ?? "" }
     /// Where a `withResult` handler leaves its images for this call.
     let images: ImageSink?
     init(data: JSON, cancellation: RuntimeCancellation, images: ImageSink? = nil) {
@@ -25,14 +25,14 @@ public struct ToolContext: Sendable {
 }
 /// An app command's handler. An async handler must not block its thread: a blocked thread can
 /// stall the Runtime's own requests. Await instead, or wrap blocking work in `blockingTool`.
-public typealias ToolHandler = @Sendable (_ invocation: JSON, _ context: ToolContext) async throws -> JSON
+typealias ToolHandler = @Sendable (_ invocation: JSON, _ context: LegacyToolContext) async throws -> JSON
 
 /// A handler for work that blocks its thread (synchronous I/O, a lock, a sleep). It runs on a
 /// thread of its own, never on Swift's cooperative pool, on every OS. The call keeps its slot
 /// until `body` returns, however long after a cancel; observe `context.cancellation` to stop.
 ///
 ///     tools: ["save": blockingTool { invocation, context in try database.write(invocation) }]
-public func blockingTool(_ body: @escaping @Sendable (_ invocation: JSON, _ context: ToolContext) throws -> JSON) -> ToolHandler {
+func blockingTool(_ body: @escaping @Sendable (_ invocation: JSON, _ context: LegacyToolContext) throws -> JSON) -> ToolHandler {
     { invocation, context in
         try await withCheckedThrowingContinuation { continuation in
             let thread = Thread { continuation.resume(with: Result { try body(invocation, context) }) }
@@ -47,11 +47,11 @@ public func blockingTool(_ body: @escaping @Sendable (_ invocation: JSON, _ cont
 /// `summary`, `keywords` and `agents` (only those agents see the document); `agents` given here
 /// overrides the frontmatter's. An agent's own path globs are config: `"wiki": {"include": [...],
 /// "exclude": [...]}`.
-public struct WikiDocument: Sendable, Equatable {
-    public let path: String
-    public let markdown: String
-    public let agents: [String]?
-    public init(path: String, markdown: String, agents: [String]? = nil) {
+struct WikiDocument: Sendable, Equatable {
+    let path: String
+    let markdown: String
+    let agents: [String]?
+    init(path: String, markdown: String, agents: [String]? = nil) {
         self.path = path; self.markdown = markdown; self.agents = agents
     }
 }
@@ -60,13 +60,13 @@ public struct WikiDocument: Sendable, Equatable {
 /// the state and runs the turn, upkeep, cancellation and persistence. This type exposes it with
 /// Swift types; `SwiftHost` performs what only the platform can (the PAL). Pass only
 /// serializable Runtime configuration in config.
-public actor CrocheRuntime {
+actor AgentEngine {
     nonisolated let core: CoreRuntime
     let host: SwiftHost
     nonisolated let memoryCache = RuntimeMemoryCache()
     private var closed = false
     var subscriptionHub: StreamHub?
-    public nonisolated let logId: String
+    nonisolated let logId: String
     #if canImport(UIKit) && os(iOS)
     private var foreground: (any NSObjectProtocol)?
     #endif
@@ -77,10 +77,9 @@ public actor CrocheRuntime {
     /// INTERNAL, not frozen: the React Native bridge's hook (it compiles these sources into its own
     /// module); apps do not use it. `observer` receives the result of each `deliverDue()` that ran a
     /// delivery turn (`ran: true`), whoever called it (the timer, a background run, the foreground,
-    /// the app), once the turn is in `inspect()`'s history. Interim: the public subscription for
+    /// the app), once the turn is in `inspect()`'s history. Interim: the subscription for
     /// agent-initiated messages (F25 on #264: `onBackgroundMessage` with replay on open) replaces it.
-    @_spi(CrocheBridge)
-    public func observeDeliveries(_ observer: (@Sendable (JSON) -> Void)?) { onDelivery = observer }
+    func observeDeliveries(_ observer: (@Sendable (JSON) -> Void)?) { onDelivery = observer }
     /// `secrets` keeps the Runtime credential apart from `storage`: KeychainSecretStore on
     /// Apple platforms. `attestor` proves the genuine app to Cloud when the project requires
     /// it: AppAttestAttestor on a device; nil on a simulator or a host that cannot attest.
@@ -96,6 +95,8 @@ public actor CrocheRuntime {
     /// `model` is the gateway-reported answering model (`modelSource: "response"`), or the
     /// request primary when unavailable (`modelSource: "requested"`). `requestedModel` is
     /// present only when different. Reported cost is unchanged by a model substitution.
+    /// `routedFor: "images"` and `routedFrom` mark a call whose images the app's (else the
+    /// project's) model does not accept, sent to an image-capable project model instead.
     /// at least once, from the start: open itself reports a call the process
     /// died during. It runs on a Runtime thread; do not call the Runtime from it.
     /// `scheduler` registers the agent's scheduled notes with the OS for when the app is not
@@ -106,7 +107,7 @@ public actor CrocheRuntime {
     /// (`scheduler_conflict`).
     /// `projectDirectory` is required on Linux, which has no app-private default.
     /// On Apple platforms it must be nil: the record stays in Application Support.
-    public static func create(config: JSON, storage: any RuntimeStorage, secrets: any RuntimeSecretStore,
+    static func create(config: JSON, storage: any RuntimeStorage, secrets: any RuntimeSecretStore,
                               attestor: (any RuntimeAttestor)? = nil,
                               tools: [String: ToolHandler] = [:],
                               http: RuntimeHTTP? = nil,
@@ -117,7 +118,7 @@ public actor CrocheRuntime {
                               maintenanceInterval: TimeInterval = 60,
                               wiki: [WikiDocument]? = nil,
                               scheduler: (any RuntimeScheduler)? = nil,
-                              projectDirectory: URL? = nil) async throws -> CrocheRuntime {
+                              projectDirectory: URL? = nil) async throws -> AgentEngine {
         let records = try ProjectRecordFiles.forOpen(projectDirectory: projectDirectory)
         let interval = try clampedMaintenanceInterval(maintenanceInterval)
         warnIfReleaseBuildCarriesDebugKey(config)
@@ -135,13 +136,13 @@ public actor CrocheRuntime {
         try host.attachScheduler()
         // From here the host's stop (close, or a failed open) detaches the scheduler, once.
         let core: CoreRuntime
-        do { core = try await offload { try CoreRuntime.open(pal: host, config: configText, options: options, onEvent: listener, onUsage: usage) } }
+        do { core = try await Offload.run { try CoreRuntime.open(pal: host, config: configText, options: options, onEvent: listener, onUsage: usage) } }
         catch { host.stop(); host.session.close(); throw error }
         if let onDebugEvent { try? core.setDebugObserver(observer: EventHook(onDebugEvent), full: false) }
         let hub: StreamHub
-        do { hub = try await offload { try StreamHub(port: FFIStreamPort(core: core)) } }
-        catch { _ = try? await offload { core.close(); return true }; host.stop(); host.session.close(); throw error }
-        let runtime = CrocheRuntime(core: core, host: host, logId: hub.logId)
+        do { hub = try await Offload.run { try StreamHub(port: FFIStreamPort(core: core, images: host.images)) } }
+        catch { _ = try? await Offload.run { core.close(); return true }; host.stop(); host.session.close(); throw error }
+        let runtime = AgentEngine(core: core, host: host, logId: hub.logId)
         await runtime.bind(hub)
         try await runtime.refreshMemory()
         host.deliver = { [weak runtime] in _ = try? await runtime?.deliverDue() }
@@ -155,11 +156,11 @@ public actor CrocheRuntime {
         return runtime
     }
     /// Adopts the Core returned by CoreProject; it never opens a second Runtime.
-    static func adopt(core: CoreRuntime, host: SwiftHost) async throws -> CrocheRuntime {
+    static func adopt(core: CoreRuntime, host: SwiftHost) async throws -> AgentEngine {
         let hub: StreamHub
-        do { hub = try await offload { try StreamHub(port: FFIStreamPort(core: core)) } }
-        catch { _ = try? await offload { core.close(); return true }; host.stop(); host.session.close(); throw error }
-        let runtime = CrocheRuntime(core: core, host: host, logId: hub.logId)
+        do { hub = try await Offload.run { try StreamHub(port: FFIStreamPort(core: core, images: host.images)) } }
+        catch { _ = try? await Offload.run { core.close(); return true }; host.stop(); host.session.close(); throw error }
+        let runtime = AgentEngine(core: core, host: host, logId: hub.logId)
         await runtime.bind(hub)
         try await runtime.refreshMemory()
         host.deliver = { [weak runtime] in _ = try? await runtime?.deliverDue() }
@@ -180,31 +181,10 @@ public actor CrocheRuntime {
         }
         #endif
     }
-    public static func identity(config: JSON) throws -> JSON {
-        do { return publicStorageIdentity(try JSON(ffiIdentity(String(decoding: try config.encoded(), as: UTF8.self)))) }
-        catch { throw CrocheError(error) }
-    }
-    /// The Runtime's calls block their thread while the host performs effects: run them on a
-    /// thread of their own, never on the cooperative pool or the main thread.
-    /// Croche's own tests: runs first on each offload thread, so a test can delay it the way the
-    /// OS may (#346). Nil in every app.
-    nonisolated(unsafe) static var offloadStarting: (@Sendable () -> Void)?
-    static func offload<T: Sendable>(_ body: @escaping @Sendable () throws -> T) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
-            Thread.detachNewThread {
-                offloadStarting?()
-                do { continuation.resume(returning: try body()) }
-                catch { continuation.resume(throwing: CrocheError(error)) }
-            }
-        }
-    }
-    fileprivate static func offloaded<T: Sendable>(_ body: @escaping @Sendable () throws -> T) async throws -> T {
-        try await offload(body)
-    }
     fileprivate func run(_ body: @escaping @Sendable (CoreRuntime) throws -> String) async throws -> JSON {
-        guard !closed else { throw CrocheError("closed", "Runtime is closed") }
+        guard !closed else { throw LegacyCrocheError("closed", "Runtime is closed") }
         let core = self.core
-        return try JSON(try await Self.offload { try body(core) })
+        return try JSON(try await Offload.run { try body(core) })
     }
     /// Runs one turn. Cancelling the calling Task cancels this turn only (from any thread, never
     /// missed): it ends `cancelled`, keeping what was said and charging an unanswered call.
@@ -214,8 +194,8 @@ public actor CrocheRuntime {
     /// Sends are admitted in the order the calls reach the Runtime (one task's sends in program
     /// order): that order is their place among held sends and in a turn they share.
     /// `imageResolution`: for every image that does not name its own (default standard).
-    public func send(_ input: JSON, responseFormat: JSON? = nil, imageResolution: ImageResolution? = nil) async throws -> JSON {
-        guard !closed else { throw CrocheError("closed", "Runtime is closed") }
+    func send(_ input: JSON, responseFormat: JSON? = nil, imageResolution: ImageResolution? = nil) async throws -> JSON {
+        guard !closed else { throw LegacyCrocheError("closed", "Runtime is closed") }
         // Admitted here, on the actor, before the hop to a thread of its own.
         return try await beginSend(input, responseFormat: responseFormat, imageResolution: imageResolution).result()
     }
@@ -228,16 +208,17 @@ public actor CrocheRuntime {
         let format = try responseFormat.map { String(decoding: try $0.encoded(), as: UTF8.self) }
         let token = CancelToken()
         do { return PendingTurn(try core.beginSend(input: text, cancel: token, responseFormat: format), token) }
-        catch { throw CrocheError(error) }
+        catch { throw LegacyCrocheError(error) }
     }
-    public func sync() async throws -> JSON { try await run { try $0.sync(); return "null" } }
+    func sync() async throws -> JSON { try await run { try $0.sync(); return "null" } }
     /// One round of background upkeep: deliver the outbox of call reports, then sync balances,
     /// policy and the model key. The Core does work only when some is due and backs off after
-    /// a failure. It runs by itself after each turn and on a timer (backgroundSync); call it
-    /// when the app returns to the foreground. It never delays a turn: a send takes over
+    /// a failure. Timer upkeep follows backgroundSync; call it when the app returns to the foreground.
+    /// Separately, Core delivers pending reports when the agent goes idle and after open,
+    /// even with backgroundSync off. That delivery never folds or syncs. It never delays a turn: a send takes over
     /// while it waits on Cloud. Never throws; the result says what happened.
     @discardableResult
-    public func maintain(force: Bool = false) async -> JSON {
+    func maintain(force: Bool = false) async -> JSON {
         (try? await run { $0.maintain(force: force) }) ?? .object(["ran": .bool(false)])
     }
     /// Delivers the agent's scheduled notes that are due, as one turn: `{ran: false}` when none
@@ -255,15 +236,15 @@ public actor CrocheRuntime {
     /// leaves its notes. Not after an `inFlight` answer: the delivery in flight does that when it
     /// ends. A failed delivery that answers `retryAt` waits until then.
     @discardableResult
-    public func deliverDue() async throws -> JSON {
-        guard !closed else { throw CrocheError("closed", "Runtime is closed") }
+    func deliverDue() async throws -> JSON {
+        guard !closed else { throw LegacyCrocheError("closed", "Runtime is closed") }
         host.attempted()
         let core = self.core
         let token = CancelToken()
         let result: JSON
         do {
             result = try await withTaskCancellationHandler {
-                try JSON(try await Self.offload { try core.deliverDue(cancel: token) })
+                try JSON(try await Offload.run { try core.deliverDue(cancel: token) })
             } onCancel: { token.cancel() }
         } catch { await resync(); throw error }
         if result["inFlight"].bool == true { return result }
@@ -277,7 +258,7 @@ public actor CrocheRuntime {
     private func resync() async {
         guard !closed else { return }
         let core = self.core
-        _ = try? await Self.offload { try core.reschedule(); return true }
+        _ = try? await Offload.run { try core.reschedule(); return true }
     }
     #if canImport(UIKit) && os(iOS)
     private func observeForeground() {
@@ -288,13 +269,13 @@ public actor CrocheRuntime {
     }
     #endif
     /// The agent's pending scheduled notes: `{pending: [{id, at, note}], due}`.
-    public func schedules() async throws -> JSON { try await run { try $0.schedules() } }
-    public func flush() async throws -> JSON { try await run { try $0.flush(); return "null" } }
+    func schedules() async throws -> JSON { try await run { try $0.schedules() } }
+    func flush() async throws -> JSON { try await run { try $0.flush(); return "null" } }
     /// Forgets this user's conversation and memory and starts over (money and identity stay).
     /// The clear takes its place on the actor, as `send` does: behind a running turn, ahead of
     /// every send that reaches the Runtime after it. Only the wait for it is on a thread of its own.
-    public func clearHistory() async throws {
-        guard !closed else { throw CrocheError("closed", "Runtime is closed") }
+    func clearHistory() async throws {
+        guard !closed else { throw LegacyCrocheError("closed", "Runtime is closed") }
         if let subscriptionHub { try await subscriptionHub.clearHistory(); return }
         try await Self.finish(beginClearHistory())
     }
@@ -303,14 +284,7 @@ public actor CrocheRuntime {
     nonisolated func beginClearHistory() -> PendingClear { core.beginClearHistory() }
     /// Waits for an admitted clear on a thread of its own.
     static func finish(_ pending: PendingClear) async throws {
-        _ = try await offload { try pending.finish(); return true }
-    }
-    /// Asks Cloud to raise (or, `absolute`, set) this user's allowance within the project's
-    /// ceilings. Pass `id` (e.g. the purchase id) to make a retry safe: Cloud applies it once.
-    /// Called while another operation runs, it answers `{deferred: true}` at once instead (see
-    /// `WriteResult`).
-    public func adjustBudget(_ amount: Double, absolute: Bool = false, id: String? = nil) async throws -> JSON {
-        try await run { try $0.adjustBudget(amount: amount, absolute: absolute, id: id) }
+        _ = try await Offload.run { try pending.finish(); return true }
     }
     /// Internal until `memory history` (B3): turns `from...to` from the turn archive, as
     /// `{"records":[...]}`; `archive_unavailable` when the storage keeps none.
@@ -321,49 +295,49 @@ public actor CrocheRuntime {
     func archiveClear(from: UInt64? = nil, to: UInt64? = nil) async throws {
         _ = try await run { try $0.archiveClear(from: from, to: to); return "null" }
     }
-    public func inspect() throws -> JSON {
-        guard !closed else { throw CrocheError("closed", "Runtime is closed") }
-        do { return try JSON(try core.inspect()) } catch { throw CrocheError(error) }
+    func inspect() throws -> JSON {
+        guard !closed else { throw LegacyCrocheError("closed", "Runtime is closed") }
+        do { return try JSON(try core.inspect()) } catch { throw LegacyCrocheError(error) }
     }
     /// Replaces the tool list (metadata as in config `tools`) and their handlers, as on the web.
     /// The Core validates it at once, all or nothing (a refusal changes nothing); the swap takes
     /// its place in the queue, so turns sent before it still offer the old list. A removed or
     /// changed command answers `withdrawn` once the swap applies. A handler given here also
     /// serves turns already queued under the same name.
-    public func setTools(_ tools: JSON, handlers: [String: ToolHandler]) throws {
-        guard !closed else { throw CrocheError("closed", "Runtime is closed") }
+    func setTools(_ tools: JSON, handlers: [String: ToolHandler]) throws {
+        guard !closed else { throw LegacyCrocheError("closed", "Runtime is closed") }
         let text = String(decoding: try tools.encoded(), as: UTF8.self)
         // New names first: the Core cannot call them before it accepts the list. Replacements
         // only after it accepts; a refusal removes what it staged, so every handler is as it was.
         let stamp = host.stageTools(handlers)
-        do { try core.setToolDeclarations(tools: text) } catch { host.unstageTools(handlers.keys, stamp: stamp); throw CrocheError(error) }
+        do { try core.setToolDeclarations(tools: text) } catch { host.unstageTools(handlers.keys, stamp: stamp); throw LegacyCrocheError(error) }
         host.acceptTools(handlers)
     }
     /// The tool list the model is offered (metadata only).
-    public func tools() throws -> JSON { try inspect()["tools"] }
+    func tools() throws -> JSON { try inspect()["tools"] }
     /// Stops the running turn only: messages sent while it ran still go, together, as the next
     /// turn. Cancelling a send's Task drops just that send while it is held; once its turn has
     /// started, the turn stops, for every send it carries.
-    public func cancel() { core.cancelTurn() }
+    func cancel() { core.cancelTurn() }
     /// Drops the messages held behind the running turn (each send ends `cancelled`); returns how many.
     /// Resolves once the held record no longer lists them.
-    @discardableResult public func clearQueued() async throws -> Int {
+    @discardableResult func clearQueued() async throws -> Int {
         guard !closed else { return 0 }
         let core = self.core
-        return Int(try await Self.offload { try core.clearQueued() })
+        return Int(try await Offload.run { try core.clearQueued() })
     }
     /// Long-term memory: `snapshot()` for a read-only view, the other methods to manage it.
-    public nonisolated var memory: CrocheMemory { CrocheMemory(runtime: self) }
+    nonisolated var memory: CrocheMemory { CrocheMemory(runtime: self) }
     /// The app's knowledge documents, held by the Rust Core in memory (never stored: load them
     /// on each open). The model searches and reads them with the built-in `wiki` command;
     /// `list`, `read` and `search` here are that same view.
-    public nonisolated var wiki: CrocheWiki { CrocheWiki(runtime: self) }
+    nonisolated var wiki: CrocheWiki { CrocheWiki(runtime: self) }
     /// Closing never waits on Cloud: unsent reports stay in the outbox for the next open. A paid
     /// call upkeep has in flight is finished and settled first.
     /// The Core projection fence does not await buffered AsyncStream/UI consumers.
     /// An app callback that waits for work on the closer's thread deadlocks under any
     /// wait-for-callback fence. A synchronous Core-listener self-close does not wait on itself.
-    public func close() async throws {
+    func close() async throws {
         if closed { return }
         closed = true
         memoryCache.close()
@@ -374,43 +348,43 @@ public actor CrocheRuntime {
         foreground = nil
         #endif
         let core = self.core
-        _ = try await Self.offload { core.close(); return true }
+        _ = try await Offload.run { core.close(); return true }
         // After the Core: a paid call upkeep has in flight is finished first.
         host.session.close()
     }
 }
 
 /// `runtime.memory`: this person's long-term memory, as the TS SDK's `runtime.memory`.
-public struct CrocheMemory: Sendable {
-    fileprivate let runtime: CrocheRuntime
+struct CrocheMemory: Sendable {
+    fileprivate let runtime: AgentEngine
     /// The memory part of `inspect()`.
-    public func callAsFunction() -> JSON { runtime.memoryCache.value }
-    public func snapshot() async throws -> JSON { try await runtime.refreshMemory(); return callAsFunction() }
+    func callAsFunction() -> JSON { runtime.memoryCache.value }
+    func snapshot() async throws -> JSON { try await runtime.refreshMemory(); return callAsFunction() }
     private func refreshed(_ body: @escaping @Sendable (CoreRuntime) throws -> String) async throws -> JSON {
         let result = try await runtime.run(body)
         if result["deferred"].bool != true { try? await runtime.refreshMemory() }
         return result
     }
     /// AI-written facts with ids, turn/time stamps, refs and replacement links.
-    public func list() async throws -> JSON { try await refreshed { try $0.memoryList() } }
+    func list() async throws -> JSON { try await refreshed { try $0.memoryList() } }
     /// `{deleted}`, or `{deferred: true}` (see `WriteResult`).
     @discardableResult
-    public func delete(_ id: String) async throws -> JSON { try await refreshed { try $0.memoryDelete(id: id) } }
+    func delete(_ id: String) async throws -> JSON { try await refreshed { try $0.memoryDelete(id: id) } }
     /// Removes every AI-written fact; the summary and conversation stay. `{cleared}`, or
     /// `{deferred: true}` (see `WriteResult`).
     @discardableResult
-    public func clear() async throws -> JSON { try await refreshed { try $0.memoryClear() } }
+    func clear() async throws -> JSON { try await refreshed { try $0.memoryClear() } }
     /// Turns memory on or off for this person; the choice outlives `clearHistory()`. Applied, it
     /// carries the setting now in force.
     @discardableResult
-    public func enabled(_ on: Bool) async throws -> WriteResult<Bool> {
+    func enabled(_ on: Bool) async throws -> WriteResult<Bool> {
         WriteResult(try await refreshed { try $0.memorySetEnabled(enabled: on) }) { _ in on }
     }
     /// Current and replaced AI-written facts: `{enabled, items}`, not the summary.
-    public func export() async throws -> JSON { try await refreshed { try $0.memoryExport() } }
+    func export() async throws -> JSON { try await refreshed { try $0.memoryExport() } }
     /// Replaces the observer of every `memory.changed` (the app's, the model's, upkeep's).
-    public func onChanged(_ listener: (@Sendable (MemoryChangedEvent) -> Void)?) throws {
-        guard !runtime.memoryCache.closed else { throw CrocheError("closed", "The agent is closed.") }
+    func onChanged(_ listener: (@Sendable (MemoryChangedEvent) -> Void)?) throws {
+        guard !runtime.memoryCache.closed else { throw LegacyCrocheError("closed", "The agent is closed.") }
         do {
             runtime.core.setMemoryObserver(observer: listener.map { callback in EventHook { event in
                 Task { try? await runtime.refreshMemory() }
@@ -424,13 +398,13 @@ extension WikiDocument {
     /// The `.md` files under `directory` as wiki documents, paths relative to it with `/`
     /// (`menu/stew.md`), in name order. Subfolders are read; symbolic links and other files are
     /// skipped, as the other SDKs' loaders do.
-    public static func fromDirectory(_ directory: URL) throws -> [WikiDocument] {
+    static func fromDirectory(_ directory: URL) throws -> [WikiDocument] {
         let files = FileManager.default
         var out: [WikiDocument] = []
         func walk(_ dir: URL, _ prefix: String) throws {
             let names: [String]
             do { names = try files.contentsOfDirectory(atPath: dir.path).sorted() }
-            catch { throw CrocheError("invalid_wiki", "\(dir.path): \(error.localizedDescription)") }
+            catch { throw LegacyCrocheError("invalid_wiki", "\(dir.path): \(error.localizedDescription)") }
             for name in names {
                 let url = dir.appendingPathComponent(name)
                 let path = prefix.isEmpty ? name : prefix + "/" + name
@@ -439,7 +413,7 @@ extension WikiDocument {
                 if type == .typeDirectory {
                     try walk(url, path)
                 } else if type == .typeRegular && name.hasSuffix(".md") {
-                    if out.count >= 2000 { throw CrocheError("invalid_wiki", "The wiki holds at most 2000 documents") }
+                    if out.count >= 2000 { throw LegacyCrocheError("invalid_wiki", "The wiki holds at most 2000 documents") }
                     out.append(WikiDocument(path: path, markdown: String(decoding: try Data(contentsOf: url), as: UTF8.self)))
                 }
             }
@@ -449,17 +423,17 @@ extension WikiDocument {
     }
     /// The documents in a folder shipped with the app (added to the target as a folder
     /// reference, so its subfolders survive): `WikiDocument.fromBundle()` reads `wiki/`.
-    public static func fromBundle(_ bundle: Bundle = .main, folder: String = "wiki") throws -> [WikiDocument] {
+    static func fromBundle(_ bundle: Bundle = .main, folder: String = "wiki") throws -> [WikiDocument] {
         guard let url = bundle.url(forResource: folder, withExtension: nil) else {
-            throw CrocheError("invalid_wiki", "No folder \(folder) in the bundle: add it to the target as a folder reference.")
+            throw LegacyCrocheError("invalid_wiki", "No folder \(folder) in the bundle: add it to the target as a folder reference.")
         }
         return try fromDirectory(url)
     }
 }
 
 /// `runtime.wiki`: the app's documents, as the TS SDK's `runtime.wiki`.
-public struct CrocheWiki: Sendable {
-    fileprivate let runtime: CrocheRuntime
+struct CrocheWiki: Sendable {
+    fileprivate let runtime: AgentEngine
     private static func json(_ docs: [WikiDocument]) throws -> String {
         let value = JSON.array(docs.map { doc in
             var o: [String: JSON] = ["path": .string(doc.path), "markdown": .string(doc.markdown)]
@@ -471,49 +445,49 @@ public struct CrocheWiki: Sendable {
     /// Replaces every document and answers what it installed: `{documents, bytes, digest}`.
     /// On an error nothing changes.
     @discardableResult
-    public func set(_ docs: [WikiDocument]) async throws -> JSON {
+    func set(_ docs: [WikiDocument]) async throws -> JSON {
         let text = try Self.json(docs)
         return try await runtime.run { try $0.wikiSet(docs: text) }
     }
     /// `set`, without the digest.
-    public func load(_ docs: [WikiDocument]) async throws { try await set(docs) }
+    func load(_ docs: [WikiDocument]) async throws { try await set(docs) }
     /// This user's own documents (saved recipes, lesson notes): stored with their state (at most
     /// 200 documents and 256 KB as stored), under `user/` (which the app's may not use), and durable when
     /// this returns. `clearHistory` keeps them. To share one with another character, put it to that character's Runtime too.
     /// Answers `{documents, bytes}`, or `{deferred: true}` (see `WriteResult`).
     @discardableResult
-    public func putUser(_ docs: [WikiDocument]) async throws -> JSON {
+    func putUser(_ docs: [WikiDocument]) async throws -> JSON {
         let text = try Self.json(docs)
         return try await runtime.run { try $0.wikiPutUser(docs: text) }
     }
     /// Removes one of this user's own documents; whether it existed.
     @discardableResult
-    public func removeUser(_ path: String) async throws -> WriteResult<Bool> {
+    func removeUser(_ path: String) async throws -> WriteResult<Bool> {
         WriteResult(try await runtime.run { try $0.wikiRemoveUser(path: path) }) { $0["removed"].bool ?? false }
     }
     /// Removes every one of this user's own documents; how many.
     @discardableResult
-    public func clearUser() async throws -> WriteResult<Int> {
+    func clearUser() async throws -> WriteResult<Int> {
         WriteResult(try await runtime.run { try $0.wikiClearUser() }) { Int($0["cleared"].number ?? 0) }
     }
     /// Adds documents or replaces those with the same path, atomically.
-    public func put(_ docs: [WikiDocument]) async throws {
+    func put(_ docs: [WikiDocument]) async throws {
         let text = try Self.json(docs)
         _ = try await runtime.run { try $0.wikiPut(docs: text); return "null" }
     }
     /// Whether the document existed.
     @discardableResult
-    public func remove(_ path: String) async throws -> Bool {
+    func remove(_ path: String) async throws -> Bool {
         try await runtime.run { try $0.wikiRemove(path: path) ? "true" : "false" }.bool ?? false
     }
     /// `[{path, title, summary?, characters, parts}]` under `folder` (every document when nil).
-    public func list(folder: String? = nil) async throws -> JSON { try await runtime.run { try $0.wikiList(folder: folder) } }
+    func list(folder: String? = nil) async throws -> JSON { try await runtime.run { try $0.wikiList(folder: folder) } }
     /// One part (1-based) of a document, `{path, title, part, parts, text}`; `.null` when none.
-    public func read(_ path: String, part: Int = 1) async throws -> JSON {
+    func read(_ path: String, part: Int = 1) async throws -> JSON {
         try await runtime.run { try $0.wikiRead(path: path, part: UInt32(clamping: max(0, part))) }
     }
     /// The best matches, best first: at most `limit` (and 5).
-    public func search(_ query: String, limit: Int = 5) async throws -> JSON {
+    func search(_ query: String, limit: Int = 5) async throws -> JSON {
         try await runtime.run { try $0.wikiSearch(query: query, limit: UInt32(clamping: min(max(0, limit), 5))) }
     }
 }
@@ -523,7 +497,7 @@ public struct CrocheWiki: Sendable {
 /// call order when that operation ends. A message sent after the write sees it; one sent before
 /// does not. It is held in this process until then: closing first drops it, and a write that
 /// cannot apply then is reported as a `write.failed` debug event.
-public enum WriteResult<Value: Sendable>: Sendable {
+enum WriteResult<Value: Sendable>: Sendable {
     case applied(Value)
     case deferred
 
@@ -542,7 +516,7 @@ final class PendingTurn: Sendable {
     func result() async throws -> JSON {
         let pending = self.pending
         return try await withTaskCancellationHandler {
-            try JSON(try await CrocheRuntime.offloaded { try pending.wait() })
+            try JSON(try await Offload.run { try pending.wait() })
         } onCancel: { [token] in token.cancel() }
     }
     func cancel() { token.cancel() }

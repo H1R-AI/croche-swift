@@ -3,37 +3,38 @@ import Foundation
 import CryptoKit
 #endif
 
-public enum DebugVisibility: String, Sendable { case runtime }
-public enum Attestation: String, Sendable { case platform, off }
+enum DebugVisibility: String, Sendable { case runtime }
+enum Attestation: String, Sendable { case platform, off }
 // Q9 recommendation: backgroundDelivery is deferred until the per-agent identifier rule.
-public struct OpenOptions: Sendable {
-    public var cloudUrl: String?
-    public var projectKey: String
-    /// App configuration. `temperature`: number 0...2, absent uses a tuned default, `.null` = omit.
-    /// Structured calls always omit it. Remote temperature configs require schema 4 / 0.5.3+.
-    public var config: JSON
-    public var user: String?
-    public var handlers: [String: ToolHandler]
-    public var language: String?
-    public var timeZone: String?
-    public var streaming: Bool?
-    public var backgroundSync: Bool?
-    public var maintenanceIntervalMs: Double?
-    public var debugKey: String?
-    public var requestTimeoutMs: Double?
-    public var maxPendingEvents: Int?
-    public var syncIntervalMs: Double?
-    public var maintenanceBackoffMs: Double?
-    public var retentionBytes: Int?
-    public var onUsage: (@Sendable (ProjectUsageEvent) -> Void)?
-    public var onDebugEvent: (@Sendable (RuntimeDebugEvent) -> Void)?
-    public var debugVisibility: DebugVisibility?
-    public var attestation: Attestation?
-    public var projectDirectory: URL?
-    public var http: RuntimeHTTP?
-    public init(cloudUrl: String? = nil,
+struct LegacyOpenOptions: Sendable {
+    var cloudUrl: String?
+    var projectKey: String
+    /// The app's bundled project configuration (a ProjectConfig or its release export); Core selects
+    /// it or a newer released config. `temperature`: number 0...2, absent uses a tuned default, `.null` = omit.
+    /// Structured calls always omit it. Remote temperature configs require schema 6 / 0.6+.
+    var bundledConfig: JSON
+    var user: String?
+    var handlers: [String: ToolHandler]
+    var language: String?
+    var timeZone: String?
+    var streaming: Bool?
+    var backgroundSync: Bool?
+    var maintenanceIntervalMs: Double?
+    var debugKey: String?
+    var requestTimeoutMs: Double?
+    var maxPendingEvents: Int?
+    var syncIntervalMs: Double?
+    var maintenanceBackoffMs: Double?
+    var retentionBytes: Int?
+    var onUsage: (@Sendable (ProjectUsageEvent) -> Void)?
+    var onDebugEvent: (@Sendable (RuntimeDebugEvent) -> Void)?
+    var debugVisibility: DebugVisibility?
+    var attestation: Attestation?
+    var projectDirectory: URL?
+    var http: RuntimeHTTP?
+    init(cloudUrl: String? = nil,
                 projectKey: String,
-                config: JSON,
+                bundledConfig: JSON,
                 user: String? = nil,
                 handlers: [String: ToolHandler] = [:],
                 language: String? = nil,
@@ -55,7 +56,7 @@ public struct OpenOptions: Sendable {
                 http: RuntimeHTTP? = nil) {
         self.cloudUrl = cloudUrl
         self.projectKey = projectKey
-        self.config = config
+        self.bundledConfig = bundledConfig
         self.user = user
         self.handlers = handlers
         self.language = language
@@ -92,15 +93,15 @@ public struct OpenOptions: Sendable {
         language ?? preferredLanguages.first
     }
     func native() throws -> NativeProjectOptions {
-        do { _ = try hostJSON().encoded(); _ = try config.encoded() }
-        catch { throw CrocheError("invalid_configuration", "Configuration must be JSON serializable.") }
+        do { _ = try hostJSON().encoded(); _ = try bundledConfig.encoded() }
+        catch { throw LegacyCrocheError("invalid_configuration", "Configuration must be JSON serializable.") }
         let records = try ProjectRecordFiles.forOpen(projectDirectory: projectDirectory)
         let directory = try NativeProjectFiles.directory(projectDirectory: projectDirectory)
         var identity = hostJSON(); identity["user"] = user.map(JSON.string) ?? .null
-        let namespace = try CrocheRuntime.identity(config: identity)["storageKey"].string ?? "croche.runtime"
+        let namespace = try storageIdentity(config: identity)["storageKey"].string ?? "croche.runtime"
         let zone: TimeZone?
         if let timeZone {
-            guard let parsed = TimeZone(identifier: timeZone) else { throw CrocheError("invalid_configuration", "timeZone must name an IANA time zone") }
+            guard let parsed = TimeZone(identifier: timeZone) else { throw LegacyCrocheError("invalid_configuration", "timeZone must name an IANA time zone") }
             zone = parsed
         } else { zone = nil }
         let attestor: (any RuntimeAttestor)?
@@ -110,7 +111,7 @@ public struct OpenOptions: Sendable {
         attestor = nil
         #endif
         let test = NativeProjectFiles.testing
-        return NativeProjectOptions(host: hostJSON(), config: config, user: user,
+        return NativeProjectOptions(host: hostJSON(), bundledConfig: bundledConfig, user: user,
             language: resolvedLanguage(), handlers: handlers, streaming: streaming ?? true,
             backgroundSync: backgroundSync ?? true, maintenanceIntervalMs: maintenanceIntervalMs ?? 60_000,
             storage: { slot in FileRuntimeStorage(url: NativeProjectFiles.file(directory: directory, namespace: namespace, slot: slot)) },
@@ -134,7 +135,7 @@ enum NativeProjectFiles {
     static func directory(projectDirectory: URL?) throws -> URL {
         if let testing { return testing }
         #if os(Linux)
-        guard let projectDirectory else { throw CrocheError("storage_error", "This platform requires projectDirectory") }
+        guard let projectDirectory else { throw LegacyCrocheError("storage_error", "This platform requires projectDirectory") }
         return projectDirectory
         #else
         let base = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)

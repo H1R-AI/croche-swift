@@ -13,15 +13,16 @@ import CoreGraphics
 
 
 /// A tool's result with images beside its value (H3): the same image kinds and limits as a
-/// message's (`{"data", "mime", "alt"}` or `{"url"}`, at most 4); a violation fails that call
-/// with `invalid_tool_result`, and the turn goes on. Return it from a handler made with
-/// `withResult`.
-public struct ToolResult: Sendable {
-    public var value: JSON
-    public var images: [JSON]
+/// message's (`{"data", "mime", "alt"}` or `{"url"}`, at most 4). A malformed list fails that
+/// call with `invalid_tool_result`, and the turn goes on; a size limit broken (more than 4
+/// images, an `alt` over 500 characters) ends the turn with `input_too_large`. Return it from a
+/// handler made with `withResult`.
+struct LegacyToolResult: Sendable {
+    var value: JSON
+    var images: [JSON]
     /// For every image that does not name its own `"resolution"`.
-    public var imageResolution: ImageResolution?
-    public init(value: JSON = .null, images: [JSON] = [], imageResolution: ImageResolution? = nil) {
+    var imageResolution: ImageResolution?
+    init(value: JSON = .null, images: [JSON] = [], imageResolution: ImageResolution? = nil) {
         self.value = value; self.images = images; self.imageResolution = imageResolution
     }
 }
@@ -30,7 +31,7 @@ public struct ToolResult: Sendable {
 /// `tools: ["room": withResult { invocation, context in ToolResult(value: ..., images: [...]) }]`.
 /// The images go to the Runtime beside the value; a plain `ToolHandler`'s JSON is never looked
 /// inside.
-public func withResult(_ handler: @escaping @Sendable (_ invocation: JSON, _ context: ToolContext) async throws -> ToolResult) -> ToolHandler {
+func withResult(_ handler: @escaping @Sendable (_ invocation: JSON, _ context: LegacyToolContext) async throws -> LegacyToolResult) -> ToolHandler {
     { invocation, context in
         let result = try await handler(invocation, context)
         // The handler ran: what it returned (plain values, nothing that can throw) is read once,

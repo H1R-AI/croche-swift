@@ -4,16 +4,16 @@ import FoundationNetworking
 #endif
 
 /// Cooperative tool cancellation. A cancelled invocation is never automatically replayed.
-public final class RuntimeCancellation: @unchecked Sendable {
+final class RuntimeCancellation: @unchecked Sendable {
     private let lock = NSLock()
     private var stopped = false
     private var listeners: [UUID: @Sendable () -> Void] = [:]
-    public init() {}
-    public var isCancelled: Bool { lock.withLock { stopped } }
-    public func check() throws {
-        if isCancelled { throw CrocheError("cancelled", "The operation was cancelled") }
+    init() {}
+    var isCancelled: Bool { lock.withLock { stopped } }
+    func check() throws {
+        if isCancelled { throw LegacyCrocheError("cancelled", "The operation was cancelled") }
     }
-    public func cancel() {
+    func cancel() {
         let callbacks = lock.withLock { () -> [@Sendable () -> Void] in
             guard !stopped else { return [] }; stopped = true
             let values = Array(listeners.values); listeners.removeAll(); return values
@@ -62,7 +62,7 @@ func bounded<T: Sendable>(milliseconds: Double?, cancellation: RuntimeCancellati
     return try await withCheckedThrowingContinuation { continuation in
         let race = EffectRace<T>(continuation)
         let listener = cancellation.observe {
-            local.cancel(); race.finish(.failure(CrocheError("cancelled", "The operation was cancelled")))
+            local.cancel(); race.finish(.failure(LegacyCrocheError("cancelled", "The operation was cancelled")))
         }
         race.add(Task {
             do { try local.check(); let value = try await body(local); try local.check(); race.finish(.success(value)) }
@@ -73,7 +73,7 @@ func bounded<T: Sendable>(milliseconds: Double?, cancellation: RuntimeCancellati
         race.add(Task {
             do {
                 try await Task.sleep(nanoseconds: UInt64(max(1, milliseconds) * 1_000_000))
-                race.finish(.failure(CrocheError("timeout", "The effect deadline expired"))); local.cancel()
+                race.finish(.failure(LegacyCrocheError("timeout", "The effect deadline expired"))); local.cancel()
                 cancellation.remove(listener)
             } catch {}
         })
@@ -82,7 +82,7 @@ func bounded<T: Sendable>(milliseconds: Double?, cancellation: RuntimeCancellati
 
 /// `onDelta` receives each server-sent event's data while a streamed response arrives, in
 /// order; the Rust Core assembles them. A transport that cannot stream never calls it.
-public typealias RuntimeHTTP = @Sendable (_ effect: JSON, _ cancellation: RuntimeCancellation,
+typealias RuntimeHTTP = @Sendable (_ effect: JSON, _ cancellation: RuntimeCancellation,
                                           _ onDelta: @escaping @Sendable (String) async -> Void) async throws -> JSON
 
 private let maxResponseBytes = 2 * 1024 * 1024
@@ -91,12 +91,12 @@ private let maxStreamBytes = 3 * maxResponseBytes
 
 /// Ephemeral URLSession transport: no cookies/cache, no redirects, 2MiB response bound.
 /// A `text/event-stream` answer is read incrementally and its deltas are handed on.
-public enum RuntimeURLSession {
-    public static func send(_ effect: JSON, cancellation: RuntimeCancellation,
+enum RuntimeURLSession {
+    static func send(_ effect: JSON, cancellation: RuntimeCancellation,
                             onDelta: @escaping @Sendable (String) async -> Void = { _ in }) async throws -> JSON {
         try cancellation.check()
         guard let address = effect["url"].string, let url = URL(string: address) else {
-            throw CrocheError("network_error", "Invalid HTTP effect URL")
+            throw LegacyCrocheError("network_error", "Invalid HTTP effect URL")
         }
         var request = URLRequest(url: url)
         request.httpMethod = effect["method"].string
@@ -136,15 +136,15 @@ public enum RuntimeURLSession {
                 // event stream is read incrementally.
                 streaming = (200..<300).contains(code) && type.lowercased().hasPrefix("text/event-stream")
                 if !streaming && expected > Int64(maxResponseBytes) {
-                    throw CrocheError("invalid_response", "HTTP response exceeds 2MiB")
+                    throw LegacyCrocheError("invalid_response", "HTTP response exceeds 2MiB")
                 }
             case .body(let data):
                 size += data.count
                 if !streaming {
-                    guard size <= maxResponseBytes else { throw CrocheError("invalid_response", "HTTP response exceeds 2MiB") }
+                    guard size <= maxResponseBytes else { throw LegacyCrocheError("invalid_response", "HTTP response exceeds 2MiB") }
                     body.append(data); continue
                 }
-                guard size <= maxStreamBytes else { throw CrocheError("invalid_provider_response", "The gateway stream exceeds its bound") }
+                guard size <= maxStreamBytes else { throw LegacyCrocheError("invalid_provider_response", "The gateway stream exceeds its bound") }
                 for event in parser.push([UInt8](data)) where !event.data.isEmpty { await onDelta(event.data) }
             }
         }
@@ -177,7 +177,7 @@ private final class HTTPDelegate: NSObject, URLSessionDataDelegate, @unchecked S
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
                     didReceive response: URLResponse, completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void) {
         guard let http = response as? HTTPURLResponse else {
-            sink.finish(throwing: CrocheError("network_error", "No HTTP response")); completionHandler(.cancel); return
+            sink.finish(throwing: LegacyCrocheError("network_error", "No HTTP response")); completionHandler(.cancel); return
         }
         var headers: [String: JSON] = [:]
         for (key, value) in http.allHeaderFields { headers[String(describing: key)] = .string(String(describing: value)) }
@@ -188,7 +188,7 @@ private final class HTTPDelegate: NSObject, URLSessionDataDelegate, @unchecked S
         sink.yield(.body(chunk))
     }
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        if error != nil { sink.finish(throwing: CrocheError("network_error", "HTTP transport failed")) }
+        if error != nil { sink.finish(throwing: LegacyCrocheError("network_error", "HTTP transport failed")) }
         else { sink.finish() }
     }
 }

@@ -8,18 +8,36 @@ import CrocheFFI
 // everything else, including SSE framing, response bounds, timeouts' meaning, persistence
 // order, upkeep and cancellation rules. Its calls into this host block a background thread.
 
-extension CrocheError {
+extension LegacyCrocheError {
     init(_ error: Error) {
-        if let e = error as? CrocheError { self = e }
+        if let e = error as? LegacyCrocheError { self = e }
         else if case let .Failure(code, message)? = error as? FfiError { self.init(code, message) }
+        // Core's App API carrier (truncate since #830 2eb98fbc): its code and public detail, unchanged.
+        else if case let .Failure(code, detail, _, _, _)? = error as? CoreApiError { self.init(code, detail) }
         else { self.init("host_error", "The host operation failed") }
     }
     var ffi: FfiError { .Failure(code: code, message: message) }
 }
 
-/// The binding's `identity`, named so `CrocheRuntime.identity` does not shadow it. Unqualified:
+/// An effect failure is a platform FACT (Keel 18:44Z): a code from Core's closed per-effect list
+/// and a detail. Core validates the code. An unexpected error with no fact code IS `internal`, sent
+/// literally (Atlas's PAL error contract, Keel 21:00Z), with this detail kept for debugging.
+/// Storage never comes through here: it reports no code.
+func effectFailure(_ error: Error) -> CorePalError {
+    if let error = error as? CorePalError { return error }
+    if let error = error as? LegacyCrocheError { return .Failure(code: error.code, detail: error.message) }
+    if case let .Failure(code, message)? = error as? FfiError { return .Failure(code: code, detail: message) }
+    return .Failure(code: "internal", detail: "\(error)")
+}
+func effect<T>(_ body: () throws -> T) throws -> T {
+    do { return try body() } catch { throw effectFailure(error) }
+}
+
+/// The binding's `identity`, named so the SDK's `storageIdentity` reads as its own. Unqualified:
 /// the React Native pod compiles the SDK and its bindings into one module.
 func ffiIdentity(_ config: String) throws -> String { try identity(config: config) }
+/// The binding's `truncate`, named so `Croche.truncate` does not shadow it.
+func ffiTruncate(_ text: String, _ max: Double) throws -> String { try truncate(text: text, max: max) }
 
 /// Runs `body` on the Swift concurrency pool and blocks this (Rust-owned, background) thread
 /// until it finishes, `cancel` fires or `milliseconds` pass.
@@ -35,7 +53,7 @@ func blockOn<T: Sendable>(milliseconds: Double?, cancel: CancelToken?,
         done.signal()
     }
     done.wait()
-    do { return try box.get() } catch { throw CrocheError(error).ffi }
+    do { return try box.get() } catch { throw LegacyCrocheError(error).ffi }
 }
 
 /// An app command (H1): runs `body` until it returns, however long after a cancel. The cancel
@@ -66,7 +84,7 @@ func blockUntilSettled<T: Sendable>(cancel: CancelToken,
     }
     cancel.onCancel(callback: CancelHook(cancellation))
     done.wait()
-    if cancellation.isCancelled { throw CrocheError("cancelled", "The operation was cancelled").ffi }
+    if cancellation.isCancelled { throw LegacyCrocheError("cancelled", "The operation was cancelled").ffi }
     do { return try box.get() } catch { throw handlerError(error).ffi }
 }
 
@@ -80,23 +98,10 @@ struct ToolNotDispatched: Error {}
 /// An error from a tool handler. "Nothing ran" is the host's to say, never a handler's: a
 /// handler that throws `tool_not_dispatched` or `host_unresponsive` (perhaps passing on another
 /// Runtime's error) may already have had its effect, so the call fails as `tool_failed`.
-func handlerError(_ error: Error) -> CrocheError {
-    if error is ToolNotDispatched { return CrocheError("tool_not_dispatched", "No handler ran for this tool") }
-    let e = CrocheError(error)
-    return ["tool_not_dispatched", "host_unresponsive"].contains(e.code) ? CrocheError("tool_failed", e.message) : e
-}
-
-/// Where app command handlers run (H1), where the OS has task executors: GCD threads, apart from
-/// Swift's cooperative pool, which also runs the Runtime's own requests. This does not make a
-/// blocking async handler safe (measured on Linux, #342); blocking work uses `blockingTool`.
-@available(macOS 15.0, iOS 18.0, tvOS 18.0, watchOS 11.0, *)
-final class ToolThreads: TaskExecutor, @unchecked Sendable {
-    static let shared = ToolThreads()
-    private let queue = DispatchQueue(label: "dev.croche.tools", attributes: .concurrent)
-    func enqueue(_ job: consuming ExecutorJob) {
-        let job = UnownedJob(job), executor = asUnownedTaskExecutor()
-        queue.async { job.runSynchronously(on: executor) }
-    }
+func handlerError(_ error: Error) -> LegacyCrocheError {
+    if error is ToolNotDispatched { return LegacyCrocheError("tool_not_dispatched", "No handler ran for this tool") }
+    let e = LegacyCrocheError(error)
+    return ["tool_not_dispatched", "host_unresponsive"].contains(e.code) ? LegacyCrocheError("tool_failed", e.message) : e
 }
 
 final class CancelHook: CancelCallback, @unchecked Sendable {
@@ -109,7 +114,7 @@ final class EventHook: EventListener, @unchecked Sendable {
     init(_ callback: @escaping @Sendable (JSON) -> Void) { self.callback = callback }
     func onEvent(event: String) { if let value = try? JSON(event) { callback(value) } }
 }
-private final class ResultBox<T>: @unchecked Sendable {
+final class ResultBox<T>: @unchecked Sendable {
     private let lock = NSLock()
     private var value: Result<T, Error>?
     func set(_ result: Result<T, Error>) { lock.withLock { value = result } }
@@ -131,6 +136,13 @@ func retryAt(_ value: JSON) -> Double? { value.number ?? value.string.flatMap(ep
 
 /// The Swift PAL handed to the Rust Runtime.
 final class SwiftHost: HostPal, @unchecked Sendable {
+    // This legacy host has no process-wide OS registrar. Never report success
+    // through its per-Runtime scheduler; Core owns replacement and retry policy.
+    func registerBackground(identifier: String, wake: CoreBackgroundWake) throws {
+        throw CorePalError.Failure(code: "capability_unsupported", detail: "This host has no OS background registrar.")
+    }
+    /// Where this host runs (a fact Core reads); a React Native host sets `.reactNative`.
+    var streamPlatformFact = HostStreamPlatform.other
     private let storage: any RuntimeStorage
     private let projectRecords: ProjectRecordFiles
     // Internal test trace, configured before Core starts; records only delegated store calls.
@@ -182,27 +194,53 @@ final class SwiftHost: HostPal, @unchecked Sendable {
     }
 
     private func host<T>(_ body: () throws -> T) throws -> T {
-        do { return try body() } catch { throw CrocheError(error).ffi }
+        do { return try body() } catch { throw LegacyCrocheError(error).ffi }
     }
+
+    // MARK: Images (private Rev 4a PAL). Core owns plans, limits and every URL; ImageIO decodes.
+    let images = NativeImagePal()
+    func imageCodecAvailable() -> Bool { images.codecAvailable }
+    func readImage(request: PalImageReadRequest, cancel: CancelToken) throws -> Data {
+        try effect { try images.read(request, cancel) }
+    }
+    func prepareImage(source: PalImageBytes, plan: PalImagePreparePlan, cancel: CancelToken) throws -> PalImageBytes {
+        try effect { try images.prepare(source, plan, cancel) }
+    }
+    func releaseImage(capture: String) { images.release(capture) }
+    func decodeImage(bytes: Data, options: PalImageDecodeOptions, cancel: CancelToken) throws -> PalDecodedImage {
+        try effect { try images.decode(bytes, options, cancel) }
+    }
+    func renderImage(request: PalImageRenderRequest, cancel: CancelToken) throws -> Data {
+        try effect { try images.render(request, cancel) }
+    }
+    func releaseDecodedImage(handle: String) { images.releaseDecoded(handle) }
+    /// A fact about the host, never a batching choice. A React Native host reports .reactNative.
+    func streamPlatform() -> HostStreamPlatform { streamPlatformFact }
 
     // MARK: HTTP
     func http(request: PalHttpRequest, sink: HttpSink, cancel: CancelToken) throws {
-        let transport = http, session = session
-        _ = try blockOn(milliseconds: Double(request.timeoutMs), cancel: cancel) { signal -> Bool in
-            if let transport { try await Self.adapt(transport, request, sink, signal) }
-            else { try await session.stream(request, into: sink, cancellation: signal) }
-            return true
+        try effect {
+            guard request.responseMode == "standard" else {
+                throw LegacyCrocheError("capability_unsupported", "Native image inputs are not supported yet")
+            }
+            if try PlatformHTTP.direct(request, sink: sink, cancel: cancel) { return }
+            let transport = http, session = session
+            _ = try blockOn(milliseconds: Double(request.timeoutMs), cancel: cancel) { signal -> Bool in
+                if let transport { try await Self.adapt(transport, request, sink, signal) }
+                else { try await session.stream(request, into: sink, cancellation: signal) }
+                return true
+            }
         }
     }
 
     /// An app transport speaks whole effects (`RuntimeHTTP`): its answer goes to the Runtime as
     /// a response, and its stream deltas as server-sent events.
-    private static func adapt(_ transport: RuntimeHTTP, _ request: PalHttpRequest, _ sink: HttpSink,
+    static func adapt(_ transport: RuntimeHTTP, _ request: PalHttpRequest, _ sink: HttpSink,
                               _ signal: RuntimeCancellation) async throws {
         var headers: [String: JSON] = [:]
         for header in request.headers { headers[header.name] = .string(header.value) }
         let effect = JSON.object(["url": .string(request.url), "method": .string(request.method), "headers": .object(headers),
-                                  "body": (try? JSON(request.body)) ?? .string(request.body),
+                                  "body": request.body.map { (try? JSON($0)) ?? .string($0) } ?? .null,
                                   "timeoutMs": .number(Double(request.timeoutMs))])
         let streaming = StreamStart()
         let reply = try await transport(effect, signal) { data in
@@ -225,6 +263,15 @@ final class SwiftHost: HostPal, @unchecked Sendable {
         if !body.isEmpty { _ = sink.chunk(bytes: body) }
     }
 
+    // MARK: #820 calls: the same assets, resolver and facts as `PlatformPal`. This per-agent
+    // store has no keyed listing; the keyed `PlatformPal` replaces it at Core's cutover.
+    func readAsset(path: String) throws -> Data? { try effect { try PlatformAssets.read(path, bundle: .main) } }
+    func resolve(host name: String, cancel: CancelToken) throws -> [String] { try effect { try PlatformResolver.resolve(name) } }
+    func platformFacts() -> PalPlatformFacts { PalPlatformFacts(targetKind: AppBuildFacts.targetKind, debuggable: AppBuildFacts.debuggable, locale: nil, attestationPlatform: nil, browserFetch: nil) }
+    func list(prefix: String) throws -> [String] {
+        throw FfiError.Failure(code: "storage_error", message: "This per-agent store keeps no keyed listing.")
+    }
+
     // MARK: Storage
     /// The Core names its snapshot by the key it locks, and other records `<key>.<entry>` (F19's
     /// held sends: `<key>.held`). Each goes to its own place: an entry never replaces the snapshot.
@@ -232,7 +279,7 @@ final class SwiftHost: HostPal, @unchecked Sendable {
     private var lockedKey: String?
     private func entry(_ key: String) throws -> String? {
         guard let main = snapshotKey, key != main else { return nil }
-        guard key.hasPrefix(main + "."), key.count > main.count + 1 else { throw CrocheError("storage_error", "Unknown storage key") }
+        guard key.hasPrefix(main + "."), key.count > main.count + 1 else { throw LegacyCrocheError("storage_error", "Unknown storage key") }
         return String(key.dropFirst(main.count + 1))
     }
     func read(key: String) throws -> String? {
@@ -254,7 +301,7 @@ final class SwiftHost: HostPal, @unchecked Sendable {
             beforeStoreAccess?(key)
             guard let name = try entry(key) else { return try storage.save(try JSON(value)) }
             guard let keyed = storage as? any KeyedRuntimeStorage else {
-                throw CrocheError("storage_error", "This RuntimeStorage keeps only its snapshot")
+                throw LegacyCrocheError("storage_error", "This RuntimeStorage keeps only its snapshot")
             }
             try keyed.save(entry: name, try JSON(value))
         }
@@ -265,7 +312,7 @@ final class SwiftHost: HostPal, @unchecked Sendable {
     func writeSecret(key: String, value: String) throws { try host { try secretStore.save(try JSON(value)) } }
     func remove(key: String) throws {
         try host {
-            guard !ProjectRecordFiles.owns(key) else { throw CrocheError("storage_error", "The project record is kept when agent data is removed") }
+            guard !ProjectRecordFiles.owns(key) else { throw LegacyCrocheError("storage_error", "The project record is kept when agent data is removed") }
             beforeStoreAccess?(key)
             if let name = try entry(key) {
                 guard let keyed = storage as? any KeyedRuntimeStorage else { return }
@@ -274,13 +321,18 @@ final class SwiftHost: HostPal, @unchecked Sendable {
         }
     }
     func removeSecret(key: String) throws { try host { try secretStore.remove() } }
-    func lock(key: String) throws {
-        try host {
-            if ProjectRecordFiles.owns(key) { return try projectRecords.acquire(key) }
-            guard !projectRecords.held else { throw CrocheError("storage_error", "Release the project record lock before taking a store lock") }
-            beforeStoreAccess?(key)
-            try storage.acquire(); snapshotKey = key
-        }
+    /// Contention is the fact `.held` (ARCHITECTURE §2a): the legacy storages' own `store_busy`
+    /// becomes that fact here, and every other throw stays a failure.
+    @discardableResult func lock(key: String) throws -> PalLockOutcome {
+        do {
+            try host {
+                if ProjectRecordFiles.owns(key) { return try projectRecords.acquire(key) }
+                guard !projectRecords.held else { throw LegacyCrocheError("storage_error", "Release the project record lock before taking a store lock") }
+                beforeStoreAccess?(key)
+                try storage.acquire(); snapshotKey = key
+            }
+            return .acquired
+        } catch FfiError.Failure("store_busy", _) { return .held }
     }
     func unlock(key: String) {
         if ProjectRecordFiles.owns(key) { projectRecords.release(key); return }
@@ -294,7 +346,7 @@ final class SwiftHost: HostPal, @unchecked Sendable {
     /// turn, clearHistory and memory work as before.
     private func archive() throws -> any ArchiveRuntimeStorage {
         guard let archive = storage as? any ArchiveRuntimeStorage else {
-            throw CrocheError("archive_unavailable", "This host keeps no turn archive.")
+            throw LegacyCrocheError("archive_unavailable", "This host keeps no turn archive.")
         }
         return archive
     }
@@ -332,6 +384,11 @@ final class SwiftHost: HostPal, @unchecked Sendable {
     func acceptTools(_ tools: [String: ToolHandler]) {
         lock.withLock { for (name, handler) in tools { handlers[name] = handler; staged[name] = nil } }
     }
+    /// A project instance's latest successful patched open: its table replaces the old one for future
+    /// invocations, as in TypeScript. A call already running keeps the handler it started with.
+    func replaceTools(_ tools: [String: ToolHandler]) {
+        lock.withLock { handlers = tools; staged.removeAll() }
+    }
 
     // MARK: Tools and attestation
     func tool(invocation: String, cancel: CancelToken) throws -> ToolOutput {
@@ -346,7 +403,7 @@ final class SwiftHost: HostPal, @unchecked Sendable {
         // No deadline here: the Runtime times the call and cancels it (H4). This returns when
         // the handler does, so a stuck one keeps its slot (H1).
         let value = try blockUntilSettled(cancel: cancel) { signal in
-            try await handler(request, ToolContext(data: context, cancellation: signal, images: sink))
+            try await handler(request, LegacyToolContext(data: context, cancellation: signal, images: sink))
         }
         // A plain handler's JSON is the value as it was; a `withResult` one's images ride beside
         // it, one sink per call (never shared between concurrent calls).
@@ -354,17 +411,20 @@ final class SwiftHost: HostPal, @unchecked Sendable {
                           images: try sink.take().map(Images.record))
     }
     func attest(request: String, timeoutMs: UInt64) throws -> String {
-        guard let attestor else { throw FfiError.Failure(code: "attestation_unsupported", message: "This host has no attestor") }
-        let effect = try host { try JSON(request) }
-        guard let clientData = effect["clientData"].string, let hash = base64URLDecode(effect["clientDataHash"].string ?? "") else {
-            throw FfiError.Failure(code: "invalid_abi", message: "Malformed attest effect")
+        try effect {
+            guard let attestor else { throw LegacyCrocheError("attestation_unsupported", "This host has no attestor") }
+            let call = try JSON(request)
+            // A malformed call is Core's bug, not an attestation fact: unlisted, so Core reports internal.
+            guard let clientData = call["clientData"].string, let hash = base64URLDecode(call["clientDataHash"].string ?? "") else {
+                throw LegacyCrocheError("invalid_abi", "Malformed attest effect")
+            }
+            let proof = try blockOn(milliseconds: Double(timeoutMs), cancel: nil) { _ -> JSON in
+                let proof = try await attestor.attest(clientData: clientData, clientDataHash: hash)
+                return .object(["platform": .string(attestor.platform), "token": .string(proof.token),
+                                "keyId": proof.keyId.map { .string($0) } ?? .null])
+            }
+            return String(decoding: try proof.encoded(), as: UTF8.self)
         }
-        let proof = try blockOn(milliseconds: Double(timeoutMs), cancel: nil) { _ -> JSON in
-            let proof = try await attestor.attest(clientData: clientData, clientDataHash: hash)
-            return .object(["platform": .string(attestor.platform), "token": .string(proof.token),
-                            "keyId": proof.keyId.map { .string($0) } ?? .null])
-        }
-        return String(decoding: try host { try proof.encoded() }, as: UTF8.self)
     }
 
     // MARK: Clock, entropy, timer
@@ -381,7 +441,7 @@ final class SwiftHost: HostPal, @unchecked Sendable {
     /// open: a timer while running, and the OS's deferred work (`scheduler`) for after. A refused
     /// registration fails this acknowledgement, which the Core reports as `schedule.degraded`
     /// with its code.
-    func schedule(entries: String) throws { try host { try applySchedule(target(times(try JSON(entries)))) } }
+    func schedule(entries: String) throws { try effect { try applySchedule(target(times(try JSON(entries)))) } }
     private var retryFloor: Double?
     /// A failed delivery answered `retryAt`: a note already due waits until then.
     func retryAfter(_ at: Double) { lock.withLock { retryFloor = at } }
@@ -399,8 +459,8 @@ final class SwiftHost: HostPal, @unchecked Sendable {
         guard let os = osScheduler else { return }
         do {
             if let at { try os.schedule(earliest: Date(timeIntervalSince1970: at / 1000)) } else { os.cancel() }
-        } catch let error as CrocheError { throw error }
-        catch { throw CrocheError("schedule_failed", "The OS scheduler refused the request") }
+        } catch let error as LegacyCrocheError { throw error }
+        catch { throw LegacyCrocheError("schedule_failed", "The OS scheduler refused the request") }
     }
     /// A delivery is starting: it covers every note due now, so the timer never retries one.
     func attempted() { let now = clock(); lock.withLock { fired = max(fired ?? -.infinity, now) } }
@@ -420,6 +480,7 @@ final class SwiftHost: HostPal, @unchecked Sendable {
             return osAttached
         }
         if release { osScheduler?.detach() }
+        images.close()
     }
     /// One timer at the earliest note, never firing a delivery before its time (a timer that ends
     /// early re-arms), and at most once per time: a delivery that was cut short leaves its notes
@@ -493,7 +554,7 @@ final class RuntimeSession: @unchecked Sendable {
     private func start(_ request: URLRequest) throws -> (URLSessionDataTask, AsyncThrowingStream<HTTPPart, Error>) {
         let (parts, continuation) = AsyncThrowingStream<HTTPPart, Error>.makeStream()
         return try lock.withLock {
-            guard let session else { throw CrocheError("network_error", "The Runtime is closed") }
+            guard let session else { throw LegacyCrocheError("network_error", "The Runtime is closed") }
             let task = session.dataTask(with: request)
             router.register(task, continuation)
             return (task, parts)
@@ -502,10 +563,10 @@ final class RuntimeSession: @unchecked Sendable {
     /// The response goes to the Runtime as it arrives. The Runtime frames and bounds it.
     func stream(_ request: PalHttpRequest, into sink: any HttpSinkProtocol, cancellation: RuntimeCancellation) async throws {
         try cancellation.check()
-        guard let url = URL(string: request.url) else { throw CrocheError("network_error", "Invalid HTTP effect URL") }
+        guard let url = URL(string: request.url) else { throw LegacyCrocheError("network_error", "Invalid HTTP effect URL") }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = request.method
-        if !["GET", "HEAD"].contains(request.method) { urlRequest.httpBody = Data(request.body.utf8) }
+        if !["GET", "HEAD"].contains(request.method), let body = request.body { urlRequest.httpBody = Data(body.utf8) }
         urlRequest.timeoutInterval = Double(request.timeoutMs) / 1000
         urlRequest.httpShouldHandleCookies = false
         for header in request.headers { urlRequest.setValue(header.value, forHTTPHeaderField: header.name) }
@@ -548,7 +609,7 @@ private final class HTTPStreamDelegate: NSObject, URLSessionDataDelegate, @unche
                     didReceive response: URLResponse, completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void) {
         guard let sink = sink(dataTask) else { completionHandler(.cancel); return }
         guard let http = response as? HTTPURLResponse else {
-            sink.finish(throwing: CrocheError("network_error", "No HTTP response")); completionHandler(.cancel); return
+            sink.finish(throwing: LegacyCrocheError("network_error", "No HTTP response")); completionHandler(.cancel); return
         }
         var headers: [String: JSON] = [:]
         for (key, value) in http.allHeaderFields { headers[String(describing: key)] = .string(String(describing: value)) }
@@ -558,6 +619,6 @@ private final class HTTPStreamDelegate: NSObject, URLSessionDataDelegate, @unche
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive chunk: Data) { sink(dataTask)?.yield(.body(chunk)) }
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         let sink = lock.withLock { sinks.removeValue(forKey: task.taskIdentifier) }
-        if error != nil { sink?.finish(throwing: CrocheError("network_error", "HTTP transport failed")) } else { sink?.finish() }
+        if error != nil { sink?.finish(throwing: LegacyCrocheError("network_error", "HTTP transport failed")) } else { sink?.finish() }
     }
 }
